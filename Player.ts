@@ -1,33 +1,18 @@
-import { Card } from "./Card.ts";
-
 export class Player {
   private static usedPlayerNames: (typeof PLAYER_NAMES)[] = [];
 
-  private name: string;
-  private hand: Card[] = [];
+  public name: string;
 
-  constructor(name?: string, ) {
+  constructor(name?: string) {
     this.name = name || Player.newName();
   }
 
-  reveal(): Card[] {
-    return [...this.hand];
-  }
-
-  give(cards: Card | Card[]): void {
-    if (Array.isArray(cards)) {
-      this.hand.push(...cards);
-    } else {
-      this.hand.push(cards);
-    }
-  }
-
   toString(): string {
-    return `${this.name} [hand: ${this.hand.length}]`;
+    return `${this.name}`;
   }
 
   private static newName(): string {
-    const available = PLAYER_NAMES.filter(name => !(name in Player.usedPlayerNames.includes));
+    const available = PLAYER_NAMES.filter(name => !(name in Player.usedPlayerNames));
 
     if (available.length === 0) {
       throw new Error("Max number of players reached! Cannot assign default name to player");
