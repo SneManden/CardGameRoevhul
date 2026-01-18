@@ -1,4 +1,4 @@
-import { Rank, Card, RegularCard, ClearCard, isClear, toShortString } from "./Card.ts";
+import { Rank, Card, RegularCard, ClearCard, isClear, toShortString, isCard } from "./Card.ts";
 import { Table } from "./Table.ts";
 
 export type Move = "pass" | Card | [RegularCard, RegularCard] | [RegularCard, RegularCard, RegularCard] | [RegularCard, RegularCard, RegularCard, RegularCard];
@@ -26,38 +26,29 @@ export class Rules {
   }
 
   isValidPlay(move: Move): true | string {
-    if (move === "pass") {
-      return true; // You can always pass
-    }
-    
     const top = this.table.top;
     if (top === null) {
       // Game must start with 3 of clubs
-      // if (this.table.pile.length === 0) {
-      //   if ()
-      // }
-      
-      return true; // You can play anything when the table is empty
+      if (this.table.pile.length === 0) {
+        const moveContains3OfClubs = Array.isArray(move)
+          ? move.some(c => isCard(c, "clubs", 3))
+          : move !== "pass" && isCard(move, "clubs", 3);
+        if (!moveContains3OfClubs) {
+          return `game must start with ${toShortString({ suit: "clubs", rank: 3 })}`;
+        }
+
+        return Array.isArray(move) ? this.isValidMultiPlayMove(move) : true;
+      } else {
+        return true; // After first card is played, anything can be played when the table is empty
+      }
+    }
+    
+    if (move === "pass") {
+      return true; // You can always pass
     }
 
     if (Array.isArray(move)) {
-      if (!Array.isArray(top)) {
-        return "cannot play multiple cards in single-card play";
-      }
-
-      if (move.length !== top.length) {
-        return "must play same number of cards in multi-card play";
-      }
-
-      if (move.some(c => c.rank !== move[0].rank)) {
-        return "cannot play multiple cards of different rank";
-      }
-
-      if (this.magnitudeOrder[move[0].rank] < this.magnitudeOrder[top[0].rank]) {
-        return "card has insufficient rank";
-      }
-
-      return true;
+      return this.isValidMultiPlayMove(move);
     }
 
     if (isClearMove(move)) {
@@ -69,6 +60,31 @@ export class Rules {
     }
 
     if (this.magnitudeOrder[move.rank] < this.magnitudeOrder[top.rank]) {
+      return "card has insufficient rank";
+    }
+
+    return true;
+  }
+
+  private isValidMultiPlayMove(move: Exclude<Move, Card | "pass">): true | string {
+    if (move.some(c => c.rank !== move[0].rank)) {
+      return "cannot play multiple cards of different rank";
+    }
+
+    const top = this.table.top;
+    if (!top) {
+      return true;
+    }
+
+    if (!Array.isArray(top)) {
+      return "cannot play multiple cards in single-card play";
+    }
+
+    if (move.length !== top.length) {
+      return "must play same number of cards in multi-card play";
+    }
+
+    if (this.magnitudeOrder[move[0].rank] < this.magnitudeOrder[top[0].rank]) {
       return "card has insufficient rank";
     }
 
