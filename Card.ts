@@ -1,3 +1,5 @@
+import { Utility } from "./Utility.ts";
+
 export const ALL_SUITS = ['hearts', 'diamonds', 'spades', 'clubs'] as const;
 export type Suit = (typeof ALL_SUITS)[number];
 
@@ -31,12 +33,15 @@ export type RegularCard = { suit: Suit; rank: Rank };
 
 export type Card = RegularCard | "Joker";
 
+export type ClearCard = "Joker" | (RegularCard & { rank: 10 });
+
 export const toString = (card: Card): string => isJoker(card) ? card : `${card.rank} of ${card.suit}`;
 export const toShortString = (card: Card): string => isJoker(card) ? "✪" : `${SUIT_ICON[card.suit]}${RANK_SHORT[card.rank]}`;
 
 export const isJoker = (card: Card): card is "Joker" => card === "Joker";
 export const isRegular = (card: Card): card is RegularCard => !isJoker(card);
 export const isCard = (card: Card, suit: Suit, rank: Rank): card is { suit: Suit, rank: Rank } => !isJoker(card) && card.suit === suit && card.rank === rank;
+export const isClear = (card: Card): card is ClearCard => isJoker(card) || card.rank === 10;
 
 export class Deck {
   private cards: Card[];
@@ -96,17 +101,6 @@ export class Deck {
   }
 
   shuffle(): void {
-    let currentIndex = this.cards.length;
-
-    // While there remain elements to shuffle...
-    while (currentIndex != 0) {
-
-      // Pick a remaining element...
-      const randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-
-      // And swap it with the current element.
-      [this.cards[currentIndex], this.cards[randomIndex]] = [this.cards[randomIndex], this.cards[currentIndex]];
-    }
+    Utility.shuffle(this.cards);
   }
 }

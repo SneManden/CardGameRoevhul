@@ -1,10 +1,28 @@
 export class Player {
-  private static usedPlayerNames: (typeof PLAYER_NAMES)[] = [];
+  private static usedPlayerNames: string[] = [];
 
   public name: string;
 
-  constructor(name?: string) {
-    this.name = name || Player.newName();
+  constructor(name?: string, promptName = false) {
+    this.name = promptName ? this.promptName(name) : (name?.trim() || Player.newName());
+    Player.usedPlayerNames.push(this.name);
+  }
+
+  promptName(defaultName?: string): string {
+    do {
+      const chosenName = prompt("Please enter a name:", defaultName);
+      if (!chosenName?.trim()) {
+        console.log(" -> Name must contain printable characters, please try again.");
+        continue;
+      }
+
+      if (chosenName.toLowerCase() in Player.usedPlayerNames.map(name => name.toLowerCase())) {
+        console.log(" -> Name already chosen, please try again.");
+        continue;
+      }
+      
+      return chosenName.trim();
+    } while (true);
   }
 
   toString(): string {
