@@ -10,10 +10,11 @@ export class PlayerInteractive implements CardPlayerBehavior {
     while (true) {
       move = this.askMove(hand);
 
-      if (rules.isValidPlay(move)) {
+      const isValidMoveOrError = rules.isValidPlay(move);
+      if (isValidMoveOrError === true) {
         break;
       } else {
-        console.log(" -> Invalid move! Try again.");
+        console.log(" -> Invalid move:", isValidMoveOrError, "! Try again.");
       }
     }
 
