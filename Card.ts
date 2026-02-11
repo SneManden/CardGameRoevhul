@@ -35,8 +35,33 @@ export type Card = RegularCard | "Joker";
 
 export type ClearCard = "Joker" | (RegularCard & { rank: 10 });
 
+export type RegularCardString = `${"♣"|"♦"|"♥"|"♠"}${"A"|2|3|4|5|6|7|8|9|10|"J"|"Q"|"K"}` | `✪`;
+export type CardString = RegularCardString | `✪`;
+
 export const toString = (card: Card): string => isJoker(card) ? card : `${card.rank} of ${card.suit}`;
 export const toShortString = (card: Card): string => isJoker(card) ? "✪" : `${SUIT_ICON[card.suit]}${RANK_SHORT[card.rank]}`;
+
+export const fromRegularCardString = (value: RegularCardString): RegularCard => {
+  const [suitIcon, rankValue] = value.split("");
+
+  const suit = Object.entries(SUIT_ICON).find(([_, icon]) => icon === suitIcon)?.[0];
+  const rank = Object.entries(RANK_SHORT).find(([_, shortRank]) => shortRank === rankValue)?.[0];
+  if (!suit || !rank) {
+    throw new Error(`Failed to create card from string '${value}'`);
+  }
+
+  const realRank = (Number.isInteger(Number(rank)) ? Number(rank) : rank) as Rank; // A bit ugly, but shrug
+
+  return { suit, rank: realRank };
+}
+
+export const fromCardString = (value: CardString): Card => {
+  if (value === "✪") {
+    return "Joker";
+  }
+
+  return fromRegularCardString(value);
+}
 
 export const isJoker = (card: Card): card is "Joker" => card === "Joker";
 export const isRegular = (card: Card): card is RegularCard => !isJoker(card);

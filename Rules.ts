@@ -1,7 +1,9 @@
-import { Rank, Card, RegularCard, ClearCard, isClear, toShortString, isCard } from "./Card.ts";
+import { Rank, Card, RegularCard, ClearCard, isClear, toShortString, isCard, CardString, RegularCardString, fromCardString, fromRegularCardString } from "./Card.ts";
 import { Table } from "./Table.ts";
 
 export type Move = "pass" | Card | [RegularCard, RegularCard] | [RegularCard, RegularCard, RegularCard] | [RegularCard, RegularCard, RegularCard, RegularCard];
+
+export type MoveString = "pass" | CardString | [RegularCardString, RegularCardString] | [RegularCardString, RegularCardString, RegularCardString] | [RegularCardString, RegularCardString, RegularCardString, RegularCardString];
 
 export const isClearMove = (move: Move): move is ClearCard => !Array.isArray(move) && move !== "pass" && isClear(move);
 
@@ -10,6 +12,23 @@ export const moveToString = (move: Move): string => Array.isArray(move)
   : move === "pass"
   ? move
   : toShortString(move);
+
+export const moveStringToMove = (value: MoveString): Move => {
+  if (Array.isArray(value)) {
+    const [a, b, c, d] = value;
+    switch (value.length) {
+      case 2: return [fromRegularCardString(a), fromRegularCardString(b)];
+      case 3: return [fromRegularCardString(a), fromRegularCardString(b), fromRegularCardString(c!)];
+      case 4: return [fromRegularCardString(a), fromRegularCardString(b), fromRegularCardString(c!), fromRegularCardString(d!)];
+    }
+  } else {
+    if (value === "pass") {
+      return "pass";
+    } else {
+      return fromCardString(value);
+    }
+  }
+}
 
 export class Rules {
   private table: Table;
@@ -39,7 +58,9 @@ export class Rules {
 
         return Array.isArray(move) ? this.isValidMultiPlayMove(move) : true;
       } else {
-        return true; // After first card is played, anything can be played when the table is empty
+        return Array.isArray(move)
+          ? this.isValidMultiPlayMove(move)
+          : true; // After first card is played, anything can be played when the table is empty
       }
     }
     

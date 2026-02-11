@@ -1,8 +1,8 @@
 import { assertEquals } from "@std/assert";
-import { Move, moveToString, Rules } from "./Rules.ts";
+import { MoveString, moveStringToMove, Rules } from "./Rules.ts";
 import { gameConfigDefaults } from "./game.ts";
 import { Table } from "./Table.ts";
-import { toShortString } from "./Card.ts";
+import { fromRegularCardString, toShortString } from "./Card.ts";
 
 function sut(): { rules: Rules, table: Table } {
   const table = new Table();
@@ -12,13 +12,15 @@ function sut(): { rules: Rules, table: Table } {
   };
 }
 
+
+// Pass is always a valid move
+// ===========================
 Deno.test({
   name: "Should always be able to pass",
   fn() {
     // Arrange
     const { table, rules } = sut();
-
-    table.top = { rank: 2, suit: "hearts" };
+    table.top = fromRegularCardString("♥2");
     
     // Act
     const isValid = rules.isValidPlay("pass");
@@ -28,66 +30,53 @@ Deno.test({
   }
 });
 
+
 // Game Must start with 3 of clubs
 // ===============================
 const error = `game must start with ${toShortString({ suit: "clubs", rank: 3 })}`;
-const startCases: { move: Move, expected: ReturnType<Rules["isValidPlay"]> }[] = [
-  // Invalid moves
-  { move: "pass", expected: error },
-  { move: "Joker", expected: error },
-  { move: { rank: 4, suit: "clubs" }, expected: error },
-  { move: { rank: 3, suit: "hearts" }, expected: error },
-  // Valid moves
-  { move: { rank: 3, suit: "clubs" }, expected: true },
-  { move: [{ rank: 3, suit: "clubs" }, { rank: 3, suit: "hearts" }], expected: true },
-];
-for (const { move, expected } of startCases) {
-  Deno.test({
-    name: `Game must start with 3 of clubs: should return "${expected}" for move "${moveToString(move)}"`,
-    fn() {
-      // Arrange
-      const { rules } = sut();
-      
-      // Act
-      const isValid = rules.isValidPlay(move);
+const testfn1 = (moveString: MoveString, expected: ReturnType<Rules["isValidPlay"]>) => {
+  // Arrange
+  const { rules } = sut();
+  
+  // Act
+  const isValid = rules.isValidPlay(moveStringToMove(moveString));
 
-      // Assert
-      assertEquals(isValid, expected);
-    }
-  });
+  // Assert
+  assertEquals(isValid, expected);
+};
+Deno.test("Must start with '♣3' 1: should return error for move 'pass'", () => testfn1("pass", error));
+Deno.test("Must start with '♣3' 2: should return error for move 'joker'", () => testfn1("✪", error));
+Deno.test("Must start with '♣3' 3: should return error for move '♣4'", () => testfn1("♣4", error));
+Deno.test("Must start with '♣3' 4: should return error for move '♥3'", () => testfn1("♥3", error));
+Deno.test("Must start with '♣3' 5: should return true for move '♣3'", () => testfn1("♣3", true));
+Deno.test("Must start with '♣3' 6: should return true for move '♣3 ♥3'", () => testfn1(["♣3", "♥3"], true));
+
+
+// Multi play moves
+// ================
+const testfn2 = (top: Table["top"], moveString: MoveString, expected: ReturnType<Rules["isValidPlay"]>) => {
+  // Arrange
+  const { table, rules } = sut();
+  table.pile = ["Joker"]; // Not first play
+  table.top = top;
+  
+  // Act
+  const isValid = rules.isValidPlay(moveStringToMove(moveString));
+
+  // Assert
+  assertEquals(isValid, expected);
 }
+// Invalid move: cannot play multiple cards of different rank
+Deno.test("Multi card play 1: should return 'error' for move '♣4, ♥3'", () => testfn2(null, ["♣4", "♥3"], "cannot play multiple cards of different rank"));
+Deno.test("Multi card play 2: should return 'error' for move '♥4, ♥3'", () => testfn2(null, ["♥4", "♥3"], "cannot play multiple cards of different rank"));
+Deno.test("Multi card play 3: should return 'error' for move '♣3, ♥3, ♠5'", () => testfn2(null, ["♣3", "♥3", "♠5"], "cannot play multiple cards of different rank"));
+Deno.test("Multi card play 4: should return 'error' for move '♣3, ♥3, ♠3, ♦5'", () => testfn2(null, ["♣3", "♥3", "♠3", "♦5"], "cannot play multiple cards of different rank"));
+// Invalid move: cannot play multiple cards in single-card play
+// Invalid move: must play same number of cards in multi-card play
+// Invalid move: card has insufficient rank
+// Valid moves
+Deno.test("Multi card play 5: should return 'true' for move '♣3, ♥3'", () => testfn2(null, ["♣3", "♥3"], true));
+Deno.test("Multi card play 6: should return 'true' for move '♣3, ♥3, ♠3'", () => testfn2(null, ["♣3", "♥3", "♠3"], true));
+Deno.test("Multi card play 7: should return 'true' for move '♣3, ♥3, ♠3, ♦3'", () => testfn2(null, ["♣3", "♥3", "♠3", "♦3"], true));
 
-// Invalid multi play moves
-// ===============================
-const multiPlayCases: { top: Table["top"], move: Move, expected: ReturnType<Rules["isValidPlay"]> }[] = [
-  // Invalid move: cannot play multiple cards of different rank
-  { top: null, move: [{ rank: 4, suit: "clubs" }, { rank: 3, suit: "hearts" }], expected: "cannot play multiple cards of different rank" },
-  { top: null, move: [{ rank: 4, suit: "hearts" }, { rank: 3, suit: "hearts" }], expected: "cannot play multiple cards of different rank" },
-  { top: null, move: [{ rank: 3, suit: "clubs" }, { rank: 3, suit: "hearts" }, { rank: 5, suit: "spades" }], expected: "cannot play multiple cards of different rank" },
-  { top: null, move: [{ rank: 3, suit: "clubs" }, { rank: 3, suit: "hearts" }, { rank: 3, suit: "spades" }, { rank: 5, suit: "diamonds" }], expected: "cannot play multiple cards of different rank" },
-  // Invalid move: cannot play multiple cards in single-card play
-  // Invalid move: must play same number of cards in multi-card play
-  // Invalid move: card has insufficient rank
-  // Valid moves
-  { top: null, move: [{ rank: 3, suit: "clubs" }, { rank: 3, suit: "hearts" }], expected: true },
-  { top: null, move: [{ rank: 3, suit: "clubs" }, { rank: 3, suit: "hearts" }, { rank: 3, suit: "spades" }], expected: true },
-  { top: null, move: [{ rank: 3, suit: "clubs" }, { rank: 3, suit: "hearts" }, { rank: 3, suit: "spades" }, { rank: 3, suit: "diamonds" }], expected: true },
-];
-for (const { top, move, expected } of multiPlayCases) {
-  Deno.test({
-    name: `Playing multiple cards must all be same rank: should return "${expected}" for move "${moveToString(move)}"`,
-    fn() {
-      // Arrange
-      const { table, rules } = sut();
-      table.pile = ["Joker"]; // Not first play
-      table.top = top;
-      
-      // Act
-      const isValid = rules.isValidPlay(move);
-
-      // Assert
-      assertEquals(isValid, expected);
-    }
-  });
-}
 
