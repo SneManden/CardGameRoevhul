@@ -126,8 +126,9 @@ export class Game {
           passed = 0;
         }
         
-        if (!this.rules.isValidPlay(move)) {
-          throw new Error(`Invalid play by ${player.name}`);
+        const isValidMove = this.rules.isValidPlay(move);
+        if (isValidMove !== true) {
+          throw new Error(`Invalid play by ${player.name}: ${isValidMove}`);
         }
         
         this.updateTable(move);
