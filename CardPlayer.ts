@@ -3,7 +3,7 @@ import { CardPlayerBehavior } from "./behaviors/CardPlayerBehavior.ts";
 import { Player } from "./Player.ts";
 import { Move, Rules } from "./Rules.ts";
 import { Table } from "./Table.ts";
-import { PlayerInteractive } from "./behaviors/ComputerDefault.ts";
+import { PlayerInteractive } from "./behaviors/PlayerInteractive.ts";
 
 export class CardPlayer extends Player {
   private hand: Card[] = [];

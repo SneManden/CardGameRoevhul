@@ -1,6 +1,7 @@
 import { Deck, Rank, toShortString } from "./Card.ts";
 import { CardPlayer } from "./CardPlayer.ts";
-import { ComputerDefault, PlayerInteractive } from "./behaviors/ComputerDefault.ts";
+import { ComputerDefault } from "./behaviors/ComputerDefault.ts";
+import { PlayerInteractive } from "./behaviors/PlayerInteractive.ts";
 import { isClearMove, Move, moveToString, Rules } from "./Rules.ts";
 import { Table } from "./Table.ts";
 import { Utility } from "./Utility.ts";
