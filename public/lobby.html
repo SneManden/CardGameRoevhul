@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Roevhul - lobby</title>
+  <!-- <link rel="icon" href="/public/favicon.ico"></link> -->
+  <!-- <link rel="stylesheet" href="/public/style.css"> -->
+  <!-- <script defer src="/public/app.js"></script> -->
+</head>
+
+<body>
+  <header>
+    <h1>Roevhul</h1>
+  </header>
+
+  <div>
+    <label for="username">Username</label>
+    <input type="text" id="username">
+  </div>
+
+  <div>
+    <button command="show-modal" commandfor="create-game-dialog">Create game</button>
+    <button id="join-game">Join game</button>
+  </div>
+
+  <dialog id="create-game-dialog">
+    <h2>Create Game</h2>
+    <form id="create-game-form" method="post" action="/game/create">
+      <input type="text" name="username" readonly hidden />
+
+      <div>
+        <label for="game-title">Game title</label>
+        <input type="text" id="game-title" name="game-title" />
+      </div>
+
+      <div>
+        <label for="num-players">Number of players</label>
+        <input type="number" id="num-players" name="num-players" min="2" max="8" />
+      </div>
+
+      <button value="cancel" formmethod="dialog">Cancel</button>
+      <button type="submit">Create</button>
+    </form>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY_USERNAME = "username";
+
+    const getDefaultPlayerName = () => `Player ${Math.round(Math.random() * 10_000_000)}`;
+
+    const createGameForm = document.getElementById("create-game-form");
+    const usernameInput = document.querySelector("#username");
+
+    let username = localStorage.getItem(STORAGE_KEY_USERNAME) || getDefaultPlayerName();
+    usernameInput.value = username;
+    updateFormUsername();
+
+    usernameInput.onkeyup = function (e) {
+      username = e.target.value;
+      updateFormUsername();
+      localStorage.setItem(STORAGE_KEY_USERNAME, username);
+    };
+
+    function updateFormUsername() {
+      const formUsername = createGameForm?.querySelector("[name=\"username\"]");
+      if (formUsername) {
+        formUsername.value = username;
+      }
+    }
+  </script>
+</body>
+
+</html>

@@ -1,4 +1,7 @@
 {
-    "deno.enable": true,
-    "deno.codeLens.test": true
+  "deno.enable": true,
+  "deno.codeLens.test": true,
+  "editor.tabSize": 2,
+  "editor.useTabStops": false,
+  "editor.detectIndentation": false
 }

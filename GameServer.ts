@@ -1,19 +1,8 @@
-import { Context, RouterContext, RouterMiddleware, State } from "@oak/oak";
+import { Context, RouterContext } from "@oak/oak";
 import * as uuid from "@std/uuid";
+import { WebSocketWithUsername, GameConfig, games } from "./db.ts";
 
-type WebSocketWithUsername = WebSocket & { username: string };
 type AppEvent = { event: string; [key: string]: any };
-
-type GameConfig = {
-  title: string;
-  numPlayers: number;
-  admin: string;
-  started: boolean;
-  created: Date;
-  connectedClients: Map<string, WebSocketWithUsername>;
-};
-
-const db = new Map<string, GameConfig>();
 
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 5;
@@ -32,7 +21,7 @@ export default class GameServer {
     }
 
     const gameId = uuid.v7.generate();
-    db.set(gameId, {
+    games.set(gameId, {
       title: title,
       admin: username,
       numPlayers: numPlayers,
@@ -55,8 +44,8 @@ export default class GameServer {
       return;
     }
 
-    const gameConfig = db.get(gameId);
-    if (!db.has(gameId) || !gameConfig) {
+    const gameConfig = games.get(gameId);
+    if (!games.has(gameId) || !gameConfig) {
       console.log("Invalid gameId", gameId, "(no such game exists)");
       return;
     }
@@ -87,7 +76,7 @@ export default class GameServer {
     console.log(`New client connected: ${username}`);
   }
 
-  private send(username: string, message: any, gameConfig: GameConfig) {
+  private send(username: string, message: MessageEvent, gameConfig: GameConfig) {
     const data = JSON.parse(message.data);
     if (data.event !== "send-message") {
       return;

@@ -1,15 +1,29 @@
-import { Application, Context, Router } from "@oak/oak";
+import { Application, Router } from "@oak/oak";
 import GameServer from "./GameServer.ts";
+import { validate } from "./utilities/jwt.ts";
+import { isLoggedIn, login, mustBeLoggedIn, signup } from "./auth.ts";
 
 const app = new Application();
 const port = 8080;
 const router = new Router();
 const server = new GameServer();
 
-// router.get("/start_web_socket", (ctx: Context) => server.handleConnection(ctx));
-router.post("/game/create", (ctx) => server.createGame(ctx));
-router.get("/game/:id", (ctx) => server.connectToGame(ctx));
+router.get("/", isLoggedIn);
+router.post("/login", isLoggedIn, login);
+router.post("/signup", isLoggedIn, signup);
 
+router.get("/lobby", mustBeLoggedIn, async (context) => {
+  await context.send({
+    root: Deno.cwd(),
+    path: "public/lobby.html",
+  });
+});
+
+// router.get("/start_web_socket", (ctx: Context) => server.handleConnection(ctx));
+router.post("/game/create", mustBeLoggedIn, (ctx) => server.createGame(ctx));
+router.get("/game/:id", mustBeLoggedIn, (ctx) => server.connectToGame(ctx));
+
+app.use(validate);
 app.use(router.routes());
 app.use(router.allowedMethods());
 app.use(async (context) => {
