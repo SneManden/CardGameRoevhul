@@ -3,6 +3,8 @@
 
 <head>
   <title>Roevhul - lobby</title>
+  <link rel="stylesheet" href="/public/reset.css">
+  <link rel="stylesheet" href="/public/style.css">
   <!-- <link rel="icon" href="/public/favicon.ico"></link> -->
   <!-- <link rel="stylesheet" href="/public/style.css"> -->
   <!-- <script defer src="/public/app.js"></script> -->
@@ -11,18 +13,24 @@
 <body>
   <header>
     <h1>Roevhul</h1>
+    <nav>
+      <ul>
+        <li><a href="/logout">Logout</a></li>
+      </ul>
+    </nav>
   </header>
-  
-  <nav>
-    <ul>
-      <li><a href="/logout">Logout</a></li>
-    </ul>
-  </nav>
 
-  <div>
-    <button command="show-modal" commandfor="create-game-dialog">Create game</button>
-    <button id="join-game">Join game</button>
-  </div>
+  <main>
+    <h3>Games</h3>
+    <ul id="games-list">
+      <li><a href=""></a></li>
+    </ul>
+  
+    <div>
+      <button command="show-modal" commandfor="create-game-dialog">Create game</button>
+      <!-- <button id="join-game">Join game</button> -->
+    </div>
+  </main>
 
   <dialog id="create-game-dialog">
     <h2>Create Game</h2>
@@ -42,8 +50,51 @@
     </form>
   </dialog>
 
+  <template id="game-list-item">
+    <li><a href=""></a></li>
+  </template>
+
   <script>
     const createGameForm = document.getElementById("create-game-form");
+
+    updateGamesList();
+    setInterval(async () => await updateGamesList(), 5_000);
+
+    async function updateGamesList() {
+      const games = await fetchGamesList();
+      updateGamesListDom(games);
+    }
+
+    async function fetchGamesList() {
+      try {
+        const response = await fetch("/games", { method: "GET", headers: { "Content-Type": "application/json" } });
+        const content = await response.json();
+        console.log(content);
+        return content;
+      } catch (error) {
+        console.error(error);
+        return [];
+      }
+    }
+
+    function updateGamesListDom(games) {
+      const ul = document.querySelector("#games-list");
+      const template = document.querySelector("#game-list-item");
+
+      ul.replaceChildren();
+
+      for (const game of games) {
+        // Clone the new row and insert it into the table
+        const liClone = template.content.cloneNode(true);
+        let anchor = liClone.querySelector("a");
+
+        const status = game.started ? "Playing" : "Waiting for players";
+        anchor.textContent = `${game.title} (${game.players}/${game.playerCapacity}) - ${status}`;
+        anchor.href = `/game/${game.gameId}`;
+
+        ul.appendChild(liClone);
+      }
+    }
   </script>
 </body>
 

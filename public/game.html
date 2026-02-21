@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Roevhul - game</title>
+  <!-- <link rel="icon" href="/public/favicon.ico"></link> -->
+  <link rel="stylesheet" href="/public/reset.css">
+  <link rel="stylesheet" href="/public/style.css">
+  <link rel="stylesheet" href="/public/game.css">
+  <!-- <script defer src="/public/app.js"></script> -->
+</head>
+
+<body>
+  <header>
+    <h1>Roevhul - GAME ON</h1>
+    <nav>
+      <ul>
+        <li><a href="/lobby">Lobby</a></li>
+        <li><a href="/logout">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <div class="content">
+    <main>
+      Main
+    </main>
+    <aside>
+      <div class="players-list-section">
+        <h3>Players</h3>
+        <ul id="players-list" class="players-list"></ul>
+      </div>
+      
+      <div class="chat-messages-section">
+        <h3>Chat</h3>
+        <ul id="chat-messages" class="chat-messages"></ul>
+      </div>
+
+      <div class="post-chat-message-section">
+        <textarea id="player-chat" rows="2"></textarea>
+        <button type="button" id="send-message">Send</button>
+      </div>
+    </aside>
+  </div>
+
+  <template id="message">
+    <li>
+      <div></div>
+      <p></p>
+    </li>
+  </template>
+
+  <script>
+    const url = new URL(`${location.href}/start_web_socket`);
+    console.log("Starting websocket with url:", url, "...");
+    url.protocol = url.protocol.replace('http', 'ws');
+    const socket = new WebSocket(url);
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      switch (data.event) {
+        case "update-users":
+          updatePlayerList(data.players);
+          break;
+
+        case "send-message":
+          addMessageToChat(data.player, data.message);
+          break;
+      }
+    };
+
+    function updatePlayerList(players) {
+      const playersList = document.getElementById("players-list");
+      playersList.replaceChildren();
+
+      for (const player of players) {
+        const listItem = document.createElement("li");
+        listItem.textContent = player;
+        playersList.appendChild(listItem);
+      }
+    }
+
+    function addMessageToChat(player, message) {
+      const chat = document.getElementById("chat-messages");
+      const template = document.getElementById("message");
+      const clone = template.content.cloneNode(true);
+
+      clone.querySelector("div").textContent = player;
+      clone.querySelector("p").textContent = message;
+      chat.prepend(clone);
+    }
+
+    const playerChat = document.getElementById("player-chat");
+    const sendMessageBtn = document.getElementById("send-message");
+    sendMessageBtn.addEventListener("click", e => {
+      const message = playerChat.value;
+      playerChat.value = "";
+      socket.send(JSON.stringify({ event: "send-message", message }));
+    });
+  </script>
+</body>
+
+</html>

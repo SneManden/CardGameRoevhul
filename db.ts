@@ -7,6 +7,7 @@ export type GameConfig = {
   title: string;
   numPlayers: number;
   admin: string;
+  password: string | null;
   started: boolean;
   created: Date;
   connectedClients: Map<string, WebSocketWithUsername>;
@@ -20,5 +21,4 @@ export type User = {
 };
 
 export const users = new Map<string, User>();
-users.set("SneManden", { passwordHash: await bcrypt.hash("test", salt), created: new Date() });
-
+users.set("SneManden", { passwordHash: await bcrypt.hash("test", salt), created: new Date() }); // Test user

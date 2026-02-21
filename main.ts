@@ -20,9 +20,10 @@ router.get("/lobby", mustBeLoggedIn, async (context) => {
   });
 });
 
-// router.get("/start_web_socket", (ctx: Context) => server.handleConnection(ctx));
-router.post("/game/create", mustBeLoggedIn, (ctx) => server.createGame(ctx));
-router.get("/game/:id", mustBeLoggedIn, (ctx) => server.connectToGame(ctx));
+router.get("/games", mustBeLoggedIn, ctx => server.listGames(ctx));
+router.post("/game/create", mustBeLoggedIn, ctx => server.createGame(ctx));
+router.get("/game/:id", mustBeLoggedIn, ctx => server.joinGame(ctx));
+router.get("/game/:id/start_web_socket", mustBeLoggedIn, ctx => server.handleConnection(ctx));
 
 app.use(validate);
 app.use(router.routes());

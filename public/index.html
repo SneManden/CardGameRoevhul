@@ -3,6 +3,8 @@
 
 <head>
   <title>Roevhul</title>
+  <link rel="stylesheet" href="/public/reset.css">
+  <link rel="stylesheet" href="/public/style.css">
   <!-- <link rel="icon" href="/public/favicon.ico"></link> -->
   <!-- <link rel="stylesheet" href="/public/style.css"> -->
   <!-- <script defer src="/public/app.js"></script> -->
@@ -13,24 +15,26 @@
     <h1>Roevhul</h1>
   </header>
 
-  <form id="login-signup-form" method="post">
-    <fieldset>
-      <p id="message"></p>
-      
-      <div>
-        <label for="username">Username</label>
-        <input type="text" name="username">
-      </div>
-      
-      <div>
-        <label for="password">Password</label>
-        <input type="password" name="password">
-      </div>
-      
-      <button type="button" id="login">Login</button>
-      <button type="button" id="signup">Signup</button>
-    </fieldset>
-  </form>
+  <main>
+    <form id="login-signup-form" method="post">
+      <fieldset>
+        <p id="message"></p>
+        
+        <div>
+          <label for="username">Username</label>
+          <input type="text" name="username">
+        </div>
+        
+        <div>
+          <label for="password">Password</label>
+          <input type="password" name="password">
+        </div>
+        
+        <button type="button" id="login">Login</button>
+        <button type="button" id="signup">Signup</button>
+      </fieldset>
+    </form>
+  </main>
   
   <script>
     const form = document.querySelector("form#login-signup-form");

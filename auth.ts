@@ -30,7 +30,7 @@ export const setJsonResponse = (response: Response, status: Status, message: str
 };
 
 export const signup = async (
-  { state, request, response, cookies }: Context<State, Record<string, unknown>>,
+  { state, request, response }: Context<State, Record<string, unknown>>,
 ) => {
   if (state.auth) {
     console.log("-> Already authorized");
@@ -92,6 +92,7 @@ export const login = async (
 
   const token = await create(header, { ...payload, username }, key);
   cookies.set("token", token);
+  cookies.set("username", username);
 
   console.log("-> Login successful!", password);
   setJsonResponse(response, 200, "Login successful");
