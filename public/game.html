@@ -5,6 +5,7 @@
   <title>Roevhul - game</title>
   <!-- <link rel="icon" href="/public/favicon.ico"></link> -->
   <link rel="stylesheet" href="/public/reset.css">
+  <link rel="stylesheet" href="/public/cards/classic-playset.css">
   <link rel="stylesheet" href="/public/style.css">
   <link rel="stylesheet" href="/public/game.css">
   <!-- <script defer src="/public/app.js"></script> -->
@@ -23,7 +24,10 @@
   
   <div class="content">
     <main>
-      Main
+
+      <div class="circle" id="table">
+      </div>
+      
     </main>
     <aside>
       <div class="players-list-section">
@@ -43,6 +47,19 @@
     </aside>
   </div>
 
+  <template id="table-player">
+    <div class="item player-container"> <!-- style="--i: playerIndex; --total: numPlayers" -->
+      <div class="player-name"></div>
+      <div class="classic-playset" style="margin-top:50px;height:200px;">
+        <div class="hand">
+    			<card class="back"><div data-suit="hearts" data-rank="6">&hearts;</div></card>
+		      <!-- <card><div data-suit="spades" data-rank="K">&#9818;</div></card>
+          <card><div data-suit="diamonds" data-rank="2">&#9830;</div></card> -->
+        </div>
+  		</div>
+    </div>
+  </template>
+
   <template id="message">
     <li>
       <div></div>
@@ -52,7 +69,6 @@
 
   <script>
     const url = new URL(`${location.href}/start_web_socket`);
-    console.log("Starting websocket with url:", url, "...");
     url.protocol = url.protocol.replace('http', 'ws');
     const socket = new WebSocket(url);
 
@@ -62,6 +78,7 @@
       switch (data.event) {
         case "update-users":
           updatePlayerList(data.players);
+          updateTable(data.players);
           break;
 
         case "send-message":
@@ -69,6 +86,21 @@
           break;
       }
     };
+
+    function updateTable(players) {
+      const template = document.getElementById("table-player");
+      const table = document.getElementById("table");
+      table.replaceChildren();
+
+      for (const i in players) {
+        const player = players[i];
+        const clone = template.content.cloneNode(true);
+
+        clone.querySelector(".player-container").style = `--i: ${i}; --total: ${players.length}`;
+        clone.querySelector(".player-name").textContent = player;
+        table.append(clone);
+      }
+    }
 
     function updatePlayerList(players) {
       const playersList = document.getElementById("players-list");

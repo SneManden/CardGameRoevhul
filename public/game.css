@@ -77,3 +77,51 @@ aside div:nth-child(2) ul {
   resize: none;
   font-size: 12px;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+:root {
+  --radius: 150px;   /* Circle size */
+}
+.circle {
+  position: relative;
+  width: calc(var(--radius) * 2);
+  height: calc(var(--radius) * 2);
+  margin: 100px auto;
+}
+.item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  margin: -30px;
+  
+  background: #667eea;
+  /* color: white; */
+  border-radius: 50%;
+  
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  
+  /* This is where the magic happens */
+  --angle: calc(360deg / var(--total) * var(--i));
+  
+  transform: 
+    rotate(var(--angle))           /* Rotate to position */
+    translateX(var(--radius))      /* Move away from center */
+    rotate(calc(-1 * var(--angle))); /* Rotate back */
+}
