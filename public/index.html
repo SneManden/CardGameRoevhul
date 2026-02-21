@@ -38,11 +38,42 @@
     const signupBtn = document.querySelector("button#signup");
     const message = document.querySelector("#message");
 
-    function submitForm(event, type) {
+    async function submitForm(event, type) {
       event.preventDefault();
-      console.log("clicked", type);
-      form.setAttribute('action', "/" + type);
-      form.submit();
+      message.textContent = "";
+      loginBtn.disabled = true;
+      signupBtn.disabled = true;
+
+      const formData = createJsonFormData();
+      const headers = { "Content-Type": "application/json" };
+
+      try {
+        const response = await fetch(`/${type}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(formData),
+        });
+        const content = await response.json();
+        message.textContent = content.message;
+
+        if (response.status === 200) {
+          setTimeout(() => location.reload(), 1_000);
+        }
+      } catch (error) {
+        message.textContent = "Internal Server Error";
+        console.log(error);
+      }
+      
+      loginBtn.disabled = false;
+      signupBtn.disabled = false;
+    }
+
+    function createJsonFormData() {
+      const json = {};
+      for (const [key, value] of new FormData(form)) {
+        json[key] = value;
+      }
+      return json;
     }
 
     loginBtn.addEventListener("click", event => submitForm(event, "login"));

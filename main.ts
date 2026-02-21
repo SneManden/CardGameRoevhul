@@ -1,7 +1,7 @@
 import { Application, Router } from "@oak/oak";
 import GameServer from "./GameServer.ts";
 import { validate } from "./utilities/jwt.ts";
-import { isLoggedIn, login, mustBeLoggedIn, signup } from "./auth.ts";
+import { isLoggedIn, login, logout, mustBeLoggedIn, signup } from "./auth.ts";
 
 const app = new Application();
 const port = 8080;
@@ -11,6 +11,7 @@ const server = new GameServer();
 router.get("/", isLoggedIn);
 router.post("/login", isLoggedIn, login);
 router.post("/signup", isLoggedIn, signup);
+router.get("/logout", logout);
 
 router.get("/lobby", mustBeLoggedIn, async (context) => {
   await context.send({

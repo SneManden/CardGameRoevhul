@@ -23,65 +23,56 @@ export const isLoggedIn = async (ctx: Context, next: () => Promise<unknown> | un
   }
 };
 
-export const signup = async (
-  { state, request, response, cookies }: Context<State, Record<string, unknown>>,
-) => {
-  console.log("SIGNUP");
-  
-  if (state.auth) {
-    // Already authorized
-    cookies.set("message", "Already authorized");
-    response.redirect("/");
-    return;
-  }
-
-  const form = await request.body.form();
-  const username = form.get("username");
-  const password = form.get("password");
-  if (!username || !password) {
-    cookies.set("message", "Must specify a username and password");
-    response.redirect("/");
-    return;
-  }
-
-  const user = users.get(username);
-  if (user) {
-    cookies.set("message", "Username already taken");
-    response.redirect("/");
-    return;
-  }
-
-  users.set(username, { passwordHash: await bcrypt.hash(password, salt), created: new Date() });
-  cookies.set("message", "User created");
-  response.redirect("/");
-};
-
 export const setJsonResponse = (response: Response, status: Status, message: string): void => {
   response.status = status;
   response.headers.set("Content-Type", "application/json");
   response.body = { message };
 };
 
-export const login = async (
+export const signup = async (
   { state, request, response, cookies }: Context<State, Record<string, unknown>>,
 ) => {
-  console.log("Try login");
-
   if (state.auth) {
     console.log("-> Already authorized");
-    // Already authorized
     response.redirect("/");
     return;
   }
 
-  const form = await request.body.form();
-  console.log("form:", form);
-  const username = form.get("username");
-  const password = form.get("password");
+  const form = await request.body.json();
+  const username = form["username"];
+  const password = form["password"];
+  if (!username || !password) {
+    console.log("-> Must specify a username and password");
+    setJsonResponse(response, 400, "Must specify a username and password");
+    return;
+  }
+
+  const user = users.get(username);
+  if (user) {
+    console.log("-> Username already taken");
+    setJsonResponse(response, 400, "Username already taken");
+    return;
+  }
+
+  users.set(username, { passwordHash: await bcrypt.hash(password, salt), created: new Date() });
+  console.log("-> User created");
+  setJsonResponse(response, 200, "User created. Now login");
+};
+
+export const login = async (
+  { state, request, response, cookies }: Context<State, Record<string, unknown>>,
+) => {
+  if (state.auth) {
+    console.log("-> Already authorized");
+    response.redirect("/");
+    return;
+  }
+
+  const form = await request.body.json();
+  const username = form["username"];
+  const password = form["password"];
   if (!username || !password) {
     console.log("-> Invalid username or password", username, password);
-    cookies.set("message", "Invalid username or password");
-    // response.redirect("/");
     setJsonResponse(response, 400, "Invalid username or password");
     return;
   }
@@ -89,20 +80,32 @@ export const login = async (
   const user = users.get(username);
   if (!user) {
     console.log("-> No registered user with that username", username);
-    cookies.set("message", "No registered user with that username");
-    response.redirect("/");
+    setJsonResponse(response, 400, "No registered user with that username");
     return;
   }
 
   if (!await bcrypt.compare(password, user.passwordHash)) {
     console.log("-> Wrong Password", password);
-    cookies.set("message", "Wrong Password");
-    response.redirect("/");
+    setJsonResponse(response, 400, "Wrong Password");
     return;
   }
 
-  console.log("-> Success!", password);
   const token = await create(header, { ...payload, username }, key);
   cookies.set("token", token);
+
+  console.log("-> Login successful!", password);
+  setJsonResponse(response, 200, "Login successful");
+};
+
+export const logout = (
+  { state, response, cookies }: Context<State, Record<string, unknown>>,
+) => {
+  if (!state.auth) {
+    console.log("-> Already logged out");
+  } else {
+    cookies.set("token", null);
+    console.log("-> Logout successful!");
+  }
+  
   response.redirect("/");
 };
