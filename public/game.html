@@ -3,12 +3,14 @@
 
 <head>
   <title>Roevhul - game</title>
+
   <!-- <link rel="icon" href="/public/favicon.ico"></link> -->
+
   <link rel="stylesheet" href="/public/reset.css">
-  <link rel="stylesheet" href="/public/cards/classic-playset.css">
   <link rel="stylesheet" href="/public/style.css">
   <link rel="stylesheet" href="/public/game.css">
-  <!-- <script defer src="/public/app.js"></script> -->
+
+  <script src='/public/cards/elements.cardmeister.full.js'></script>
 </head>
 
 <body>
@@ -21,11 +23,19 @@
       </ul>
     </nav>
   </header>
-  
+	
   <div class="content">
     <main>
 
       <div class="circle" id="table">
+      </div>
+
+      <div id="hud">
+        <div class="hand player-hand">
+    			<playing-card cid=As></playing-card>
+          <playing-card suit=Hearts rank=10></playing-card>
+          <playing-card suit=3 rank=Queen></playing-card>
+        </div>
       </div>
       
     </main>
@@ -48,15 +58,9 @@
   </div>
 
   <template id="table-player">
-    <div class="item player-container"> <!-- style="--i: playerIndex; --total: numPlayers" -->
+    <div class="item player-container">
       <div class="player-name"></div>
-      <div class="classic-playset" style="margin-top:50px;height:200px;">
-        <div class="hand">
-    			<card class="back"><div data-suit="hearts" data-rank="6">&hearts;</div></card>
-		      <!-- <card><div data-suit="spades" data-rank="K">&#9818;</div></card>
-          <card><div data-suit="diamonds" data-rank="2">&#9830;</div></card> -->
-        </div>
-  		</div>
+      <div class="hand"></div>
     </div>
   </template>
 
@@ -74,6 +78,8 @@
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
+
+      data.players.push("Alice", "Bob", "Charlie", "Denise");
 
       switch (data.event) {
         case "update-users":
@@ -98,6 +104,13 @@
 
         clone.querySelector(".player-container").style = `--i: ${i}; --total: ${players.length}`;
         clone.querySelector(".player-name").textContent = player;
+        
+        for (let i=0; i<Math.floor(Math.random() * 6)+1; i++) {
+          const card = document.createElement("playing-card");
+          card.setAttribute("cid", 0);
+          clone.querySelector(".hand").appendChild(card);
+        }
+        
         table.append(clone);
       }
     }

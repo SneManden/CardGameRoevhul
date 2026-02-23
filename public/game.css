@@ -80,11 +80,42 @@ aside div:nth-child(2) ul {
 
 
 
+.item.player-container .player-name {
+  position: absolute;
+  top: -24px;
+  color: #555;
+  background: #ddd;
+  border-radius: 2px;
+  padding: 2px 4px;
+  font-size: 10px;
+}
 
+.hand {
+  display: flex;
+  gap: 5px;
+}
 
+.player-container .hand {
+  bottom: -16px;
+  position: absolute;
+}
 
+.player-container .hand playing-card {
+  width: 32px;
+  margin-left: -25px;
+}
 
+.player-container .hand playing-card:first-child {
+  margin-left: 0;
+}
 
+#hud {
+  border: 1px solid red;
+}
+
+#hud .hand playing-card {
+  width: 128px;
+}
 
 
 
@@ -93,13 +124,17 @@ aside div:nth-child(2) ul {
 
 
 :root {
-  --radius: 150px;   /* Circle size */
+  --radius: 200px;   /* Circle size */
 }
 .circle {
   position: relative;
   width: calc(var(--radius) * 2);
   height: calc(var(--radius) * 2);
   margin: 100px auto;
+
+
+  border-radius: var(--radius);
+  background: #4e2b2b;
 }
 .item {
   position: absolute;
