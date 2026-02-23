@@ -2,10 +2,12 @@ import { Application, Router } from "@oak/oak";
 import GameServer from "./GameServer.ts";
 import { validate } from "./utilities/jwt.ts";
 import { isLoggedIn, login, logout, mustBeLoggedIn, signup } from "./auth.ts";
+import { RoevhulGameRunner } from "./GameState.ts";
 
 const app = new Application();
 const port = 8080;
 const router = new Router();
+// const gameState = new RoevhulGameRunner();
 const server = new GameServer();
 
 router.get("/", isLoggedIn);

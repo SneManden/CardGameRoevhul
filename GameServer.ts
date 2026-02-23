@@ -10,6 +10,8 @@ const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 5;
 
 export default class GameServer {
+  constructor() {
+  }
 
   public listGames({ response }: Context) {
     console.log("listGames:", games);

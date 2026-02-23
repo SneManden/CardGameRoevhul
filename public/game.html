@@ -79,10 +79,9 @@
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      data.players.push("Alice", "Bob", "Charlie", "Denise");
-
       switch (data.event) {
         case "update-users":
+          data.players.push("Alice", "Bob", "Charlie", "Denise");
           updatePlayerList(data.players);
           updateTable(data.players);
           break;
@@ -142,6 +141,22 @@
       const message = playerChat.value;
       playerChat.value = "";
       socket.send(JSON.stringify({ event: "send-message", message }));
+    });
+
+    function handleCardClicked(cid) {
+      console.log("Card clicked", cid);
+    }
+
+    const hand = document.getElementById("hud").querySelector(".hand");
+    hand.addEventListener("click", e => {
+      const cardClicked = e.target.parentElement;
+      const cardCid = e.target.getAttribute("cid");
+      console.log("Clicked", cardClicked);
+
+      if (cardCid !== null && cardCid !== undefined) {
+        handleCardClicked(cardCid);
+        socket.send(JSON.stringify({ event: "send-action", cardCid: cardCid }));
+      }
     });
   </script>
 </body>
