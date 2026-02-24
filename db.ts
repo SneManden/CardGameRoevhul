@@ -1,24 +1,15 @@
 import * as bcrypt from "bcrypt/mod";
 import { salt } from "./auth.ts";
+import { IBar } from "./GameState.ts";
+import { GameType, GameConfig, User } from "./types.ts";
+import { Roevhul } from "./games/roevhul.ts";
 
-export type WebSocketWithUsername = WebSocket & { username: string };
-
-export type GameConfig = {
-  title: string;
-  numPlayers: number;
-  admin: string;
-  password: string | null;
-  started: boolean;
-  created: Date;
-  connectedClients: Map<string, WebSocketWithUsername>;
+export const gameTypeToStateMap: { [T in GameType]: () => IBar } = {
+  "Roevhul": () => new Roevhul(),
 };
 
 export const games = new Map<string, GameConfig>();
 
-export type User = {
-  passwordHash: string;
-  created: Date;
-};
-
 export const users = new Map<string, User>();
 users.set("SneManden", { passwordHash: await bcrypt.hash("test", salt), created: new Date() }); // Test user
+users.set("Other", { passwordHash: await bcrypt.hash("test", salt), created: new Date() }); // Test user
