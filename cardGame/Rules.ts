@@ -1,4 +1,4 @@
-import { Rank, Card, RegularCard, ClearCard, isClear, toShortString, isCard, CardString, RegularCardString, fromCardString, fromRegularCardString } from "./Card.ts";
+import { Rank, Card, RegularCard, ClearCard, isClear, toShortString, isCard, CardString, RegularCardString, fromCardString, fromRegularCardString, fromCid } from "./Card.ts";
 import { Table } from "./Table.ts";
 
 export type Move = "pass" | Card | [RegularCard, RegularCard] | [RegularCard, RegularCard, RegularCard] | [RegularCard, RegularCard, RegularCard, RegularCard];
@@ -27,6 +27,21 @@ export const moveStringToMove = (value: MoveString): Move => {
     } else {
       return fromCardString(value);
     }
+  }
+}
+
+export const cidStringToMove = (value: "pass" | string[]): Move => {
+  if (value === "pass") {
+    return value;
+  }
+
+  const [a, b, c, d] = value;
+  switch (value.length) {
+    case 1: return fromCid(a);
+    case 2: return [fromCid(a) as RegularCard, fromCid(b) as RegularCard];
+    case 3: return [fromCid(a) as RegularCard, fromCid(b) as RegularCard, fromCid(c) as RegularCard];
+    case 4: return [fromCid(a) as RegularCard, fromCid(b) as RegularCard, fromCid(c) as RegularCard, fromCid(d) as RegularCard];
+    default: throw new Error(`Failed to convert cid string to move: ${value}!`);
   }
 }
 

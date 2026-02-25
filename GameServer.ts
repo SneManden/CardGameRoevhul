@@ -15,6 +15,11 @@ export default class GameServer {
   private activeGames = new Map<string, IFoo<IBar>>();
   
   constructor() {
+    for (const [id, gameConfig] of games) {
+      const initStateFn = gameTypeToStateMap[gameConfig.type];
+      const state = initStateFn();
+      this.activeGames.set(id, new Foo(state));
+    }
   }
 
   public listGames({ response }: Context) {
@@ -84,7 +89,17 @@ export default class GameServer {
       return null;
     }
 
-    if (config.started) {
+    return { config, game };
+  }
+
+  public async joinGame(ctx: RouterContext<"/game/:id", { id: string; } & Record<string | number, string | undefined>, Record<string, unknown>>) {
+    const result = this.getGameFromId(ctx.params.id);
+    if (!result) {
+      return;
+    }
+
+    const { game, config } = result;
+    if (config.started && !game.acceptedUsers.includes(ctx.state.username as string)) {
       console.log("Game started");
       return null;
     }
@@ -92,14 +107,6 @@ export default class GameServer {
     if (game.connectedClients.size >= config.numPlayers) {
       console.log("Game full");
       return null;
-    }
-
-    return { config, game };
-  }
-
-  public async joinGame(ctx: RouterContext<"/game/:id", { id: string; } & Record<string | number, string | undefined>, Record<string, unknown>>) {
-    if (!this.getGameFromId(ctx.params.id)) {
-      return;
     }
 
     await ctx.send({

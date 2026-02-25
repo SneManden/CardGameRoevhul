@@ -5,27 +5,27 @@ export interface IBar {
   getCurrentPlayerTurn(): string;
   isGameOver(): boolean;
 
-  tryMakeMove(username: string, move: unknown): void;
+  tryMakeMove(username: string, move: unknown): { ok: boolean; message: string };
   getState(username: string): unknown;
 }
 
 export interface IFoo<IBar> {
   state: IBar;
   connectedClients: Map<string, WebSocketWithUsername>;
+  acceptedUsers: string[];
   start(): void;
   clientDisconnected(username: string): void;
 }
 
 export class Foo implements IFoo<IBar> {
   connectedClients = new Map<string, WebSocketWithUsername>();
+  acceptedUsers: string[] = [];
 
   constructor(public state: IBar) {
     console.log("Initialized game (Foo)");
   }
 
   start(): void {
-    const players: string[] = [];
-    
     // Override onmessage with own private variant, then default to original after 
     for (const socket of this.connectedClients.values()) {
       const onMessageFn = socket.onmessage;
@@ -36,12 +36,12 @@ export class Foo implements IFoo<IBar> {
         }
       }
 
-      players.push(socket.username);
+      this.acceptedUsers.push(socket.username);
     }
 
     console.log("Game started! (Foo)");
 
-    this.state.start(players);
+    this.state.start(this.acceptedUsers);
 
     // Cannot broadcast during setup WS
     setTimeout(() => this.broadcastCurrentState(), 500);
@@ -60,19 +60,25 @@ export class Foo implements IFoo<IBar> {
       return; // not for me
     }
 
-    if (this.state.getCurrentPlayerTurn() !== username) {
-      return; // ignore messages from players whose turn it is not
+    const response = this.state.tryMakeMove(username, rest);
+    console.log("->", response);
+    if (response.ok) {
+      this.broadcastCurrentState();
+    } else {
+      this.connectedClients.get(username)?.send(JSON.stringify({ event: "send-response", message: response.message }));
     }
-
-    this.state.tryMakeMove(username, rest);
-    this.broadcastCurrentState();
   }
 
   private broadcastCurrentState(): void {
+    console.group("broadcastCurrentState");
     for (const [username, socket] of this.connectedClients.entries()) {
       const state = this.state.getState(username);
+
+      console.log(username, state);
+      
       socket.send(JSON.stringify({ event: "state", state }));
     }
+    console.groupEnd();
   }
 }
 

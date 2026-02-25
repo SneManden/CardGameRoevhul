@@ -79,6 +79,9 @@ aside div:nth-child(2) ul {
 }
 
 
+.item.player-container.active {
+  outline: 3px solid green;
+}
 
 .item.player-container .player-name {
   position: absolute;
@@ -114,7 +117,12 @@ aside div:nth-child(2) ul {
 }
 
 #hud .hand playing-card {
-  width: 128px;
+  width: 96px;
+  margin-left: -70px;
+}
+
+#hud .hand playing-card:first-child {
+  margin-left: 0;
 }
 
 

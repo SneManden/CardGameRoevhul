@@ -1,6 +1,6 @@
-import { Card, Deck, isCard, RegularCard, toShortString } from "../cardGame/Card.ts";
+import { Card, Deck, isCard, toCid, toShortString } from "../cardGame/Card.ts";
 import { gameConfigDefaults } from "../cardGame/game.ts";
-import { Move, moveToString, Rules } from "../cardGame/Rules.ts";
+import { cidStringToMove, Move, moveToString, Rules } from "../cardGame/Rules.ts";
 import { Table } from "../cardGame/Table.ts";
 import { IBar } from "../GameState.ts";
 
@@ -8,8 +8,8 @@ import { IBar } from "../GameState.ts";
 export type RoevhulGameState = {
   id: number;
   isGameOver: boolean;
-  hand: Card[]; // TODO: convert to cid?
-  top: Table["top"];
+  hand: string[];
+  top: string[] | null;
   playerTurn: string;
   playerHandCount: { [username: string]: number };
 };
@@ -17,13 +17,13 @@ export type RoevhulGameState = {
 // server -> client
 export type PlayerActionEvent = {
   username: string;
-  move: Move;
+  move: "pass" | string[];
 }
 
 // client -> server
 export type PlayerMoveEvent = {
   id: number;
-  move: Move;
+  move: "pass" | string[];
 };
 
 
@@ -55,30 +55,44 @@ export class Roevhul implements IBar {
   }
 
   getCurrentPlayerTurn(): string {
-    return this.players[this.turn & this.players.length];
+    return this.players[this.turn % this.players.length];
   }
 
-  tryMakeMove(username: string, moveEvent: PlayerMoveEvent): void {
-    const move: Move = moveEvent.move; // TODO: parse to real move
+  tryMakeMove(username: string, moveEvent: PlayerMoveEvent): ReturnType<IBar["tryMakeMove"]> {
+    const { move: moveValue } = moveEvent; // TODO: parse to real move
 
-    console.log("tryMakeMove(username:", username, ", move:", moveToString(move), ")");
+    console.log("tryMakeMove(username:", username, ", move:", moveValue, ")");
 
-    const hand = this.hands.get(username)?.map(card => toShortString(card));
+    const err = (message: string, ...logs: any[]): ReturnType<IBar["tryMakeMove"]> => {
+      console.log(message, ...logs);
+      return { ok: false, message };
+    }
+
+    if (this.getCurrentPlayerTurn() !== username) {
+      return err("Ignored, it is not your turn!");
+    }
+
+    let move;
+    try {
+      move = cidStringToMove(moveValue);
+    } catch (error) {
+      return err("move event does not contain a valid move notation", error);
+    }
+
+    const hand = this.hands.get(username);
     if (!hand) {
-      console.log("-> no such hand for username", username);
-      return; // throw?
+      return err("internal error", "-> no such hand for username", username); // TODO: throw?
     }
 
     if (!this.rules.isValidPlay(move)) {
-      console.log("-> not valid move");
-      return; // not a valid move
+      return err("not a valid move");
     }
 
     if (move !== "pass") {
+      const handCards = hand.map(card => toShortString(card));
       const moveCards = Array.isArray(move) ? move : [move];
-      if (moveCards.some(card => !hand.includes(toShortString(card)))) {
-      console.log("-> sneaky bastard tried to make a move with a card not in hand! Hand is:", hand);
-        return; // sneaky bastard tried to make a move with a card not in hand!
+      if (moveCards.some(card => !handCards.includes(toShortString(card)))) {
+        return err("sneaky bastard tried to make a move with a card not in hand");
       }
   
       // The move is valid, make it!
@@ -86,8 +100,8 @@ export class Roevhul implements IBar {
 
       // Remove cards from players hand
       for (const card of moveCards) {
-        const indexOf = hand.indexOf(toShortString(card));
-        hand.splice(indexOf, 1);
+        const indexOf = hand.findIndex(c => toShortString(c) === toShortString(card));
+        console.log("removed", hand.splice(indexOf, 1), "card from hand");
       }
     }
 
@@ -96,8 +110,14 @@ export class Roevhul implements IBar {
     // Next players turn
     const mayTryAgain = (move: Move): boolean => move === "Joker" || (move !== "pass" && !Array.isArray(move) && move.rank === 10);
     if (!mayTryAgain(move)) {
+      console.log("next players turn");
       this.turn = this.getNextPlayerTurn();
+      console.log("is determined to be:", this.turn, this.players[this.turn % this.players.length]);
+    } else {
+      console.log("user may try again, turn not ended.");
     }
+
+    return { ok: true, message: "OK" };
   }
 
   getState(username: string): RoevhulGameState {
@@ -108,10 +128,12 @@ export class Roevhul implements IBar {
 
     return {
       id: this.turn,
-      hand: hand,
+      hand: hand.map(card => toCid(card)),
       isGameOver: this.isGameOver(),
       playerTurn: this.getCurrentPlayerTurn(),
-      top: this.table.top,
+      top: this.table.top === null
+        ? null
+        : (Array.isArray(this.table.top) ? this.table.top : [this.table.top]).map(card => toCid(card)),
       playerHandCount: this.hands.entries()
         .reduce<RoevhulGameState["playerHandCount"]>((result, [username, hand]) => {
           result[username] = hand.length;
@@ -126,19 +148,23 @@ export class Roevhul implements IBar {
   }
 
   private getNextPlayerTurn(): number {
+    console.group("getNextPlayerTurn() turn is currently", this.turn, this.players[this.turn % this.players.length]);
     let turn = this.turn;
     for (let i=0; i<this.players.length+1; i++) {
       turn += 1;
 
       const username = this.players[turn % this.players.length];
-      const playerNumberOfCards = this.hands.get(username)?.length
+      const playerNumberOfCards = this.hands.get(username)?.length;
       if (!playerNumberOfCards) {
+        console.log(this.players[turn % this.players.length], "number of cards is", playerNumberOfCards, "... not valid for next turn, skipped.");
         continue;
       }
 
+      console.groupEnd();
       return turn;
     }
 
+    console.groupEnd();
     throw new Error("Failed to determine next players turn!");
   }
 

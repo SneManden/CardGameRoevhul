@@ -32,9 +32,6 @@
 
       <div id="hud">
         <div class="hand player-hand">
-    			<playing-card cid=As></playing-card>
-          <playing-card suit=Hearts rank=10></playing-card>
-          <playing-card suit=3 rank=Queen></playing-card>
         </div>
       </div>
       
@@ -76,18 +73,26 @@
     url.protocol = url.protocol.replace('http', 'ws');
     const socket = new WebSocket(url);
 
+    let playerUsernames = [];
+
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
       switch (data.event) {
         case "update-users":
           // data.players.push("Alice", "Bob", "Charlie", "Denise");
+          playerUsernames = data.players;
           updatePlayerList(data.players);
           updateTable(data.players);
           break;
 
         case "send-message":
           addMessageToChat(data.player, data.message);
+          break;
+
+        case "state":
+          console.log("onmessage(event):", event.data);
+          updateState(data.state);
           break;
         
         default:
@@ -96,7 +101,31 @@
       }
     };
 
-    function updateTable(players) {
+    function updateState(state) {
+      updateTable(playerUsernames, state.playerHandCount, state.playerTurn);
+      updatePlayerHand(state.hand);
+    }
+
+    function updatePlayerHand(hand) {
+      const playerHandEl = document.getElementById("hud").querySelector(".hand");
+      playerHandEl.replaceChildren();
+      
+      for (const cid of hand) {
+        const card = document.createElement("playing-card");
+        card.setAttribute("cid", cid);
+        playerHandEl.appendChild(card);
+      }
+    }
+
+    /**
+      @param {string[]} players
+      @param {{[key:string]: number}} cardsPerPlayer
+      @param {string} currentTurn
+      @return {void}
+    */
+    function updateTable(players, cardsPerPlayer, currentTurn) {
+      console.log("updateTable(players:", players, ", cardsPerPlayer:", cardsPerPlayer, ", currentTurn:", currentTurn, ")");
+      
       const template = document.getElementById("table-player");
       const table = document.getElementById("table");
       table.replaceChildren();
@@ -108,13 +137,18 @@
         clone.querySelector(".player-container").style = `--i: ${i}; --total: ${players.length}`;
         clone.querySelector(".player-name").textContent = player;
         
-        for (let i=0; i<Math.floor(Math.random() * 6)+1; i++) {
+        for (let i=0; i<cardsPerPlayer?.[player] || 0; i++) {
           const card = document.createElement("playing-card");
           card.setAttribute("cid", 0);
           clone.querySelector(".hand").appendChild(card);
         }
         
         table.append(clone);
+
+        // Cannot set class until _after_ it has been inserted in the DOM (appended to table)
+        if (player === currentTurn) {
+          table.lastElementChild.classList.add("active");
+        }
       }
     }
 
@@ -149,17 +183,17 @@
 
     function handleCardClicked(cid) {
       console.log("Card clicked", cid);
+      socket.send(JSON.stringify({ event: "action", id: 0, move: [cid] }));
     }
 
     const hand = document.getElementById("hud").querySelector(".hand");
     hand.addEventListener("click", e => {
       const cardClicked = e.target.parentElement;
-      const cardCid = e.target.getAttribute("cid");
+      const cardCid = cardClicked.getAttribute("cid");
       console.log("Clicked", cardClicked);
 
       if (cardCid !== null && cardCid !== undefined) {
         handleCardClicked(cardCid);
-        socket.send(JSON.stringify({ event: "action", id: 0, move: cardCid }));
       }
     });
   </script>
