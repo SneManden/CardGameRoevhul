@@ -38,8 +38,33 @@ export type ClearCard = "Joker" | (RegularCard & { rank: 10 });
 export type RegularCardString = `${"♣"|"♦"|"♥"|"♠"}${"A"|2|3|4|5|6|7|8|9|10|"J"|"Q"|"K"}` | `✪`;
 export type CardString = RegularCardString | `✪`;
 
+export const toCid = (card: Card): string => isJoker(card) ? "j" : `${card.rank === 10 ? "T" : RANK_SHORT[card.rank]}${card.suit[0]}`
 export const toString = (card: Card): string => isJoker(card) ? card : `${card.rank} of ${card.suit}`;
 export const toShortString = (card: Card): string => isJoker(card) ? "✪" : `${SUIT_ICON[card.suit]}${RANK_SHORT[card.rank]}`;
+
+export const fromCid = (cid: string): Card => {
+  cid = cid?.trim().toLowerCase();
+  if (!cid) {
+    throw new Error(`Failed to create card from cid '${cid}'`);
+  }
+
+  if (cid === "j") {
+    return "Joker";
+  }
+
+  if (cid.length !== 2) {
+    throw new Error(`Failed to create card from cid '${cid}'`);
+  }
+
+  const [rv, sv] = cid.split("");
+  const suit = ALL_SUITS.find(s => s[0] === sv);
+  const rank = Object.entries(RANK_SHORT).find(([k, r]) => r === rv || (k === 10 && rv === "t"))?.[0];
+  if (!suit || !rank) {
+    throw new Error(`Failed to create card from cid '${cid}'`);
+  }
+
+  return { suit, rank };
+}
 
 export const fromRegularCardString = (value: RegularCardString): RegularCard => {
   const [suitIcon, rankValue] = value.split("");

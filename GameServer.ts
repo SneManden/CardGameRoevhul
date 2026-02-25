@@ -148,7 +148,7 @@ export default class GameServer {
   }
 
   private send(username: string, message: MessageEvent, game: IFoo<IBar>) {
-    console.log("send(username:", username, ", message:", message, ", game)");
+    console.log("send(username:", username, ", message.data:", message.data, ", game)");
     
     const data = JSON.parse(message.data);
     if (data.event !== "send-message") {
@@ -165,6 +165,8 @@ export default class GameServer {
   private clientDisconnected(username: string, game: IFoo<IBar>) {
     game.clientDisconnected(username);
     this.broadcastPlayers(game);
+
+    // TODO: stop game? remove from active games? save stats?
 
     console.log(`Player ${username} disconnected`);
   }

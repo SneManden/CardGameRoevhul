@@ -16,3 +16,19 @@ export type User = {
   passwordHash: string;
   created: Date;
 };
+
+export type GamesPlayed = {
+  title: string;
+  type: GameType;
+  started: Date;
+  ended: Date;
+  admin: string;
+  players: string[];
+  stats: GameStats;
+};
+
+export type GameStats = {
+  rounds: {
+    standings: string[];
+  }[];
+};

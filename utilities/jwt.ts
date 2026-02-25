@@ -32,7 +32,7 @@ export const validate = async (
     }
   }
 
-  console.log(`validate token: ${token} =>`, state.auth ? "authorized!" : "invalid token!");
+  // console.log(`validate token: ${token} =>`, state.auth ? "authorized!" : "invalid token!");
 
   await next();
 };

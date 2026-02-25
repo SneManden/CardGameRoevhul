@@ -11,6 +11,7 @@ export type RoevhulGameState = {
   hand: Card[]; // TODO: convert to cid?
   top: Table["top"];
   playerTurn: string;
+  playerHandCount: { [username: string]: number };
 };
 
 // server -> client
@@ -44,6 +45,13 @@ export class Roevhul implements IBar {
     this.dealHands();
 
     this.turn = this.players.indexOf(this.startingPlayer());
+
+    console.log("A game of roevhul has started", {
+      players: this.players,
+      hands: this.hands,
+      turn: this.turn,
+      playerTurn: this.getCurrentPlayerTurn(),
+    });
   }
 
   getCurrentPlayerTurn(): string {
@@ -104,7 +112,17 @@ export class Roevhul implements IBar {
       isGameOver: this.isGameOver(),
       playerTurn: this.getCurrentPlayerTurn(),
       top: this.table.top,
-    }
+      playerHandCount: this.hands.entries()
+        .reduce<RoevhulGameState["playerHandCount"]>((result, [username, hand]) => {
+          result[username] = hand.length;
+          return result;
+        }, {}),
+    };
+  }
+
+  isGameOver(): boolean {
+    const stillPlaying = this.stillPlaying();
+    return stillPlaying.length < 2;
   }
 
   private getNextPlayerTurn(): number {
@@ -122,11 +140,6 @@ export class Roevhul implements IBar {
     }
 
     throw new Error("Failed to determine next players turn!");
-  }
-
-  private isGameOver(): boolean {
-    const stillPlaying = this.stillPlaying();
-    return stillPlaying.length < 2;
   }
 
   private stillPlaying(): string[] {
@@ -154,8 +167,13 @@ export class Roevhul implements IBar {
     for (let playerIndex=0; this.deck.size() > 0; playerIndex=(playerIndex+1)%this.players.length) {
       const username = this.players[playerIndex];
       const card = this.deck.draw(1);
-      const hand = this.hands.get(username);
-      if (card && hand) {
+      let hand = this.hands.get(username);
+      if (!hand) {
+        hand = [];
+        this.hands.set(username, hand);
+      }
+      
+      if (card) {
         hand.push(...(Array.isArray(card) ? card : [card]));
       }
     }

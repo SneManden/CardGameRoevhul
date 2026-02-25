@@ -81,13 +81,17 @@
 
       switch (data.event) {
         case "update-users":
-          data.players.push("Alice", "Bob", "Charlie", "Denise");
+          // data.players.push("Alice", "Bob", "Charlie", "Denise");
           updatePlayerList(data.players);
           updateTable(data.players);
           break;
 
         case "send-message":
           addMessageToChat(data.player, data.message);
+          break;
+        
+        default:
+          console.log("onmessage(event):", event.data);
           break;
       }
     };
@@ -155,7 +159,7 @@
 
       if (cardCid !== null && cardCid !== undefined) {
         handleCardClicked(cardCid);
-        socket.send(JSON.stringify({ event: "send-action", cardCid: cardCid }));
+        socket.send(JSON.stringify({ event: "action", id: 0, move: cardCid }));
       }
     });
   </script>
