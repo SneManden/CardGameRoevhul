@@ -57,6 +57,10 @@ aside div:nth-child(2) ul {
   margin: 4px 8px;
 }
 
+.chat-messages li.system {
+  background: #999;
+}
+
 .chat-messages li div {
   color: rgba(255,255,255,0.35);
   font-size: 10px;
@@ -121,13 +125,27 @@ aside div:nth-child(2) ul {
   margin-left: -70px;
 }
 
-#hud .hand playing-card:first-child {
+#hud .hand playing-card[style*="order: 0"] {
   margin-left: 0;
 }
 
 
 
+#pile {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid red;
+  left: 50%;
+  top: 50%;
+  margin-left: -5px;
+  margin-top: -5px;
+}
 
+#pile playing-card {
+  width: 32px;
+  position: absolute;
+}
 
 
 

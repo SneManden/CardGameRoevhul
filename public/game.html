@@ -28,10 +28,16 @@
     <main>
 
       <div class="circle" id="table">
+        <div id="pile"></div>
+        <div id="seats"></div>
       </div>
 
       <div id="hud">
         <div class="hand player-hand">
+        </div>
+        <div class="controls">
+          <button id="sort-hand">Sort hand</button>
+          <button id="pass">Pass</button>
         </div>
       </div>
       
@@ -75,12 +81,23 @@
 
     let playerUsernames = [];
 
+    const playerHand = document.getElementById("hud").querySelector(".hand");
+    const passBtn = document.getElementById("hud").querySelector("#pass");
+    const sortHandBtn = document.getElementById("hud").querySelector("#sort-hand");
+    const playersList = document.getElementById("players-list");
+    const table = document.getElementById("table");
+    const seats = table.querySelector("#seats");
+    const pile = table.querySelector("#pile");
+    
+    let isSorted = false;
+
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
+      console.log("onmessage", data);
+
       switch (data.event) {
         case "update-users":
-          // data.players.push("Alice", "Bob", "Charlie", "Denise");
           playerUsernames = data.players;
           updatePlayerList(data.players);
           updateTable(data.players);
@@ -91,15 +108,98 @@
           break;
 
         case "state":
-          console.log("onmessage(event):", event.data);
           updateState(data.state);
+          break;
+
+        case "send-response":
+          addMessageToChat("System", data.message, true);
+          break;
+        
+        case "player-move":
+          animatePlayerMove(data.username, data.move);
           break;
         
         default:
-          console.log("onmessage(event):", event.data);
+          console.log("onmessage(event):", data);
           break;
       }
     };
+
+    /**
+      @param {string} username
+      @param {string[] | "pass"} move
+      @return {Promise<void>}
+    */
+    function animatePlayerMove(username, move) {
+      if (move === "pass") {
+        // 0. Show text bubble with "pass" from user
+        // TODO
+        return;
+      }
+
+      // 1. create new card(s) with origin at player
+      for (const cid of move) {
+        const card = document.createElement("playing-card");
+        card.setAttribute("cid", cid);
+        pile.append(card);
+        
+        // 2. animate a throw towards middle face up
+        const start = getPlayerPosition(username);
+        const target = getTargetPosition();
+        card.style.left = `${Math.round(start.x - target.x)}px`;
+        card.style.top = `${Math.round(start.y - target.y)}px`;
+        
+        animateThrowCard(card, start, target);
+      }
+
+      // 3. if clear (10/joker), then change pile on table face down
+    }
+
+    /**
+      @param {number} min
+      @param {number} max
+      @return {number}
+    */
+    const randomNumber = (min, max) => Math.random()*(max-min) + min;
+
+    /**
+      @param {HTMLElement} card
+      @param {{ x: number, y: number }} start
+      @param {{ x: number, y: number }} target
+      @return {{ x: number, y: number }}
+    */
+    function animateThrowCard(card, start, target, duration=1_000) {
+      console.log("animateThrowCard(card:", card, ", start:", start, ", target:", target, ")");
+      const translateX = Math.round(target.x - start.x + randomNumber(-5, 5));
+      const translateY = Math.round(target.y - start.y + randomNumber(-5, 5));
+      const rotate = Math.round(randomNumber(-25, 25));
+      card.animate([
+        { transform: `translate(${translateX}px, ${translateY}px) rotate(${rotate}deg)` }
+      ], { duration: duration, fill: "forwards" });
+    }
+
+    /**
+      @param {string} username
+      @return {{ x: number, y: number }}
+    */
+    function getPlayerPosition(username) {
+      const playerElement = table.querySelector(`[data-player=\"${username}\"]`);
+      const rect = playerElement.getBoundingClientRect();
+      const position = { x: rect.x, y: rect.y };
+      console.log("getPlayerPosition(username:", username, ") =>", position, playerElement);
+      return position;
+    }
+
+    /**
+      @param {string} username
+      @return {{ x: number, y: number }}
+    */
+    function getTargetPosition() {
+      const rect = pile.getBoundingClientRect();
+      const position = { x: rect.x, y: rect.y };
+      console.log("getTargetPosition() =>", position, table);
+      return position;
+    }
 
     function updateState(state) {
       updateTable(playerUsernames, state.playerHandCount, state.playerTurn);
@@ -107,13 +207,17 @@
     }
 
     function updatePlayerHand(hand) {
-      const playerHandEl = document.getElementById("hud").querySelector(".hand");
-      playerHandEl.replaceChildren();
+      playerHand.replaceChildren();
       
       for (const cid of hand) {
         const card = document.createElement("playing-card");
         card.setAttribute("cid", cid);
-        playerHandEl.appendChild(card);
+        playerHand.appendChild(card);
+      }
+
+      playerHand.firstElementChild.style.order = 0;
+      if (isSorted) {
+        sortPlayerHand();
       }
     }
 
@@ -127,8 +231,8 @@
       console.log("updateTable(players:", players, ", cardsPerPlayer:", cardsPerPlayer, ", currentTurn:", currentTurn, ")");
       
       const template = document.getElementById("table-player");
-      const table = document.getElementById("table");
-      table.replaceChildren();
+      
+      seats.replaceChildren();
 
       for (const i in players) {
         const player = players[i];
@@ -143,17 +247,43 @@
           clone.querySelector(".hand").appendChild(card);
         }
         
-        table.append(clone);
+        seats.append(clone);
 
         // Cannot set class until _after_ it has been inserted in the DOM (appended to table)
         if (player === currentTurn) {
-          table.lastElementChild.classList.add("active");
+          const inserted = seats.lastElementChild;
+          inserted.setAttribute("data-player", player);
+          inserted.classList.add("active");
         }
       }
     }
 
+    passBtn.addEventListener("click", e => {
+      socket.send(JSON.stringify({ event: "action", id: 0, move: "pass" }));
+    });
+
+    sortHandBtn.addEventListener("click", e => sortPlayerHand());
+    function sortPlayerHand() {
+      const getOrderingValue = card => card.getAttribute("cid");
+
+      const cards = Array.from(playerHand.querySelectorAll("playing-card"));
+      const ordered = cards.sort((a,b) => getOrderingValue(a).localeCompare(getOrderingValue(b)));
+      ordered.forEach((cardElement, index) => cardElement.style.order = index);
+
+      isSorted = true;
+    }
+
+    playerHand.addEventListener("click", e => {
+      const cardClicked = e.target.parentElement;
+      const cardCid = cardClicked.getAttribute("cid");
+      console.log("Clicked", cardClicked);
+
+      if (cardCid !== null && cardCid !== undefined) {
+        socket.send(JSON.stringify({ event: "action", id: 0, move: [cardCid] }));
+      }
+    });
+
     function updatePlayerList(players) {
-      const playersList = document.getElementById("players-list");
       playersList.replaceChildren();
 
       for (const player of players) {
@@ -163,16 +293,7 @@
       }
     }
 
-    function addMessageToChat(player, message) {
-      const chat = document.getElementById("chat-messages");
-      const template = document.getElementById("message");
-      const clone = template.content.cloneNode(true);
-
-      clone.querySelector("div").textContent = player;
-      clone.querySelector("p").textContent = message;
-      chat.prepend(clone);
-    }
-
+    const chat = document.getElementById("chat-messages");
     const playerChat = document.getElementById("player-chat");
     const sendMessageBtn = document.getElementById("send-message");
     sendMessageBtn.addEventListener("click", e => {
@@ -181,21 +302,18 @@
       socket.send(JSON.stringify({ event: "send-message", message }));
     });
 
-    function handleCardClicked(cid) {
-      console.log("Card clicked", cid);
-      socket.send(JSON.stringify({ event: "action", id: 0, move: [cid] }));
-    }
+    function addMessageToChat(player, message, fromSystem = false) {
+      const template = document.getElementById("message");
+      const clone = template.content.cloneNode(true);
 
-    const hand = document.getElementById("hud").querySelector(".hand");
-    hand.addEventListener("click", e => {
-      const cardClicked = e.target.parentElement;
-      const cardCid = cardClicked.getAttribute("cid");
-      console.log("Clicked", cardClicked);
+      clone.querySelector("div").textContent = player;
+      clone.querySelector("p").textContent = message;
+      chat.prepend(clone);
 
-      if (cardCid !== null && cardCid !== undefined) {
-        handleCardClicked(cardCid);
+      if (fromSystem) {
+        chat.firstElementChild.classList.add("system");
       }
-    });
+    }
   </script>
 </body>
 

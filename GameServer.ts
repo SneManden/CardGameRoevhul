@@ -145,10 +145,12 @@ export default class GameServer {
     game.connectedClients.set(username, socket);
 
     // Start game
-    if (game.connectedClients.size === config.numPlayers) {
+    if (game.connectedClients.size === config.numPlayers && !game.started) {
       config.started = true;
       game.start();
       // TODO: Update DB
+    } else if (game.started) {
+      game.bindSocket(socket, true); // re-bind after reconnect
     }
 
     console.log(`[Game "${config.title}"] New client connected: '${username}'`);
