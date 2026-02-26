@@ -90,7 +90,7 @@ export const login = async (
     return;
   }
 
-  const token = await create(header, { ...payload, username }, key);
+  const token = await create(header, { ...payload(), username }, key);
   cookies.set("token", token);
   cookies.set("username", username);
 
