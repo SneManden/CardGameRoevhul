@@ -58,12 +58,12 @@ export const fromCid = (cid: string): Card => {
 
   const [rv, sv] = cid.split("");
   const suit = ALL_SUITS.find(s => s[0] === sv);
-  const rank = Object.entries(RANK_SHORT).find(([k, r]) => r === rv || (k === 10 && rv === "t"))?.[0];
+  const rank = Object.entries(RANK_SHORT).find(([k, r]) => r.toLowerCase() === rv || (`${k}` === "10" && rv === "t"))?.[0];
   if (!suit || !rank) {
     throw new Error(`Failed to create card from cid '${cid}'`);
   }
 
-  return { suit, rank };
+  return { suit, rank: (Number.isInteger(Number(rank)) ? Number(rank) : rank) as Rank };
 }
 
 export const fromRegularCardString = (value: RegularCardString): RegularCard => {

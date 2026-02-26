@@ -84,8 +84,9 @@ export class Roevhul implements IBar {
       return err("internal error", "-> no such hand for username", username); // TODO: throw?
     }
 
-    if (!this.rules.isValidPlay(move)) {
-      return err("not a valid move");
+    const isValidPlay = this.rules.isValidPlay(move);
+    if (isValidPlay !== true) {
+      return err(`not a valid move: ${isValidPlay}`);
     }
 
     if (move !== "pass") {
