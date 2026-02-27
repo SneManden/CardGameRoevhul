@@ -29,6 +29,7 @@
 
       <div class="circle" id="table">
         <div id="pile"></div>
+        <div id="dropzone"></div>
         <div id="seats"></div>
       </div>
 
@@ -89,6 +90,7 @@
     const playersList = document.getElementById("players-list");
     const table = document.getElementById("table");
     const seats = table.querySelector("#seats");
+    const dropzone = table.querySelector("#dropzone");
     const pile = table.querySelector("#pile");
     
     let isSorted = false;
@@ -144,18 +146,16 @@
       for (const cid of move) {
         const card = document.createElement("playing-card");
         card.setAttribute("cid", cid);
-        pile.append(card);
+        dropzone.append(card);
         
         // 2. animate a throw towards middle face up
         const start = getPlayerPosition(username);
-        const target = getTargetPosition();
+        const target = getPositionOf(dropzone);
         card.style.left = `${Math.round(start.x - target.x)}px`;
         card.style.top = `${Math.round(start.y - target.y)}px`;
         
         animateThrowCard(card, start, target);
       }
-
-      // 3. if clear (10/joker), then change pile on table face down
     }
 
     /**
@@ -187,26 +187,49 @@
     */
     function getPlayerPosition(username) {
       const playerElement = table.querySelector(`[data-player=\"${username}\"]`);
-      const rect = playerElement.getBoundingClientRect();
-      const position = { x: rect.x, y: rect.y };
-      console.log("getPlayerPosition(username:", username, ") =>", position, playerElement);
-      return position;
+      return getPositionOf(playerElement);
     }
 
     /**
       @param {string} username
       @return {{ x: number, y: number }}
     */
-    function getTargetPosition() {
-      const rect = pile.getBoundingClientRect();
+    function getPositionOf(element) {
+      const rect = element.getBoundingClientRect();
       const position = { x: rect.x, y: rect.y };
-      console.log("getTargetPosition() =>", position, table);
       return position;
     }
 
     function updateState(state) {
       updateTable(playerUsernames, state.playerHandCount, state.playerTurn);
       updatePlayerHand(state.hand);
+      updatePileAndDropzone(state.top, state.pileSize);
+    }
+
+    /**
+      @param {string[] | null} top
+      @return {void}
+    */
+    function updatePileAndDropzone(top, pileSize) {
+      if (pileSize === 0 || top) {
+        return;
+      }
+
+      setTimeout(() => {
+        for (const card of dropzone.children) {
+          animateThrowCard(card, getPositionOf(card), getPositionOf(pile), 1_000); // TODO: fix bug with double translation negating effect
+        }
+      }, 1_200);
+
+      setTimeout(() => {
+        dropzone.replaceChildren();
+  
+        if (pile.children.length === 0) {
+          const faceDownPile = document.createElement("playing-card");
+          faceDownPile.setAttribute("cid", 0);
+          pile.append(faceDownPile);
+        }
+      }, 3_000);
     }
 
     function updatePlayerHand(hand) {
@@ -282,6 +305,9 @@
     */
     function onCardClicked(card) {
       const cid = card.getAttribute("cid");
+      if (!cid) {
+        return;
+      }
       selectedCards[cid] = !Boolean(selectedCards[cid]);
       card.classList.toggle("selected", selectedCards[cid]);
 
@@ -291,18 +317,10 @@
 
     playerHand.addEventListener("click", e => {
       onCardClicked(e.target.parentElement);
-      // const cardClicked = e.target.parentElement;
-      // const cardCid = cardClicked.getAttribute("cid");
-      // console.log("Clicked", cardClicked);
-
-      // if (cardCid !== null && cardCid !== undefined) {
-      //   socket.send(JSON.stringify({ event: "action", id: 0, move: [cardCid] }));
-      // }
     });
 
     useBtn.addEventListener("click", e => {
       const cardCids = Object.entries(selectedCards).filter(([cid, selected]) => selected).map(([cid, _]) => cid);
-      console.log("Playing cards:", cardCids);
       socket.send(JSON.stringify({ event: "action", id: 0, move: cardCids }));
       for (const cid of cardCids) {
         delete selectedCards[cid];

@@ -10,6 +10,7 @@ export type RoevhulGameState = {
   isGameOver: boolean;
   hand: string[];
   top: string[] | null;
+  pileSize: number;
   playerTurn: string;
   playerHandCount: { [username: string]: number };
 };
@@ -103,7 +104,7 @@ export class Roevhul implements IGameState {
       // Remove cards from players hand
       for (const card of moveCards) {
         const indexOf = hand.findIndex(c => toShortString(c) === toShortString(card));
-        hand.splice(indexOf, 1);
+        this.deck.add(hand.splice(indexOf, 1));
       }
     }
 
@@ -132,6 +133,7 @@ export class Roevhul implements IGameState {
       top: this.table.top === null
         ? null
         : (Array.isArray(this.table.top) ? this.table.top : [this.table.top]).map(card => toCid(card)),
+      pileSize: this.deck.size(),
       playerHandCount: this.hands.entries()
         .reduce<RoevhulGameState["playerHandCount"]>((result, [username, hand]) => {
           result[username] = hand.length;

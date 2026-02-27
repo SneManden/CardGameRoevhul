@@ -135,7 +135,7 @@ playing-card.selected {
 
 
 
-#pile {
+#dropzone, #pile {
   position: absolute;
   width: 10px;
   height: 10px;
@@ -146,9 +146,14 @@ playing-card.selected {
   margin-top: -5px;
 }
 
+#dropzone playing-card,
 #pile playing-card {
   width: 32px;
   position: absolute;
+}
+
+#pile {
+  top: calc(50% - 50px);
 }
 
 
