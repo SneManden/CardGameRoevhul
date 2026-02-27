@@ -18,7 +18,7 @@ export default class GameServer {
     for (const [id, gameConfig] of games) {
       const initStateFn = gameTypeToStateMap[gameConfig.type];
       const state = initStateFn();
-      this.activeGames.set(id, new Foo(state));
+      this.activeGames.set(id, new Foo(gameConfig.admin, state));
     }
   }
 
@@ -58,7 +58,7 @@ export default class GameServer {
     }
 
     const gameId = uuid.v7.generate();
-    games.set(gameId, {
+    const gameConfig = {
       title: title,
       type: type,
       admin: ctx.state.username as string, // trust it
@@ -66,11 +66,12 @@ export default class GameServer {
       numPlayers: numPlayers,
       started: false,
       created: new Date(),
-    });
+    };
+    games.set(gameId, gameConfig);
 
     const initStateFn = gameTypeToStateMap[type];
     const state = initStateFn();
-    this.activeGames.set(gameId, new Foo(state));
+    this.activeGames.set(gameId, new Foo(gameConfig.admin, state));
 
     ctx.response.body = "Created";
     ctx.response.redirect(`/game/${gameId}`);

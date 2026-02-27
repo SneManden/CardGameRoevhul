@@ -1,9 +1,13 @@
+import { RoevhulGameState } from "./games/roevhul.ts";
 import { WebSocketWithUsername } from "./types.ts";
 
-export const INGOING_EVENT_TYPES = ["action"] as const;
+export const INGOING_EVENT_TYPES = ["action", "manage"] as const;
 export const OUTGOING_EVENT_TYPES = ["send-response", "state", "player-move"] as const;
 export type IngoingEventType = (typeof INGOING_EVENT_TYPES)[number];
 export type OutgoingEventType = (typeof OUTGOING_EVENT_TYPES)[number];
+
+export const isIngoingEvent = (event: any): event is IngoingEventType => INGOING_EVENT_TYPES.includes(event);
+export const isOutgoingEvent = (event: any): event is OutgoingEventType => OUTGOING_EVENT_TYPES.includes(event);
 
 export interface IBar {
   start(players: string[]): void;
@@ -30,7 +34,7 @@ export class Foo implements IFoo<IBar> {
   acceptedUsers: string[] = [];
   started = false;
 
-  constructor(public state: IBar) {
+  constructor(public admin: string, public state: IBar) {
     console.log("Initialized game (Foo)");
   }
 
@@ -71,15 +75,44 @@ export class Foo implements IFoo<IBar> {
   // Receive message from a client
   private onMessage(username: string, eventData: any): void {
     const { event, ...rest } = JSON.parse(eventData);
-    if (!INGOING_EVENT_TYPES.includes(event)) {
+    if (!isIngoingEvent(event)) {
       return; // not for me
     }
 
-    const response = this.state.tryMakeMove(username, rest);
+    switch (event) {
+      case "action":
+        this.handleActionEvent(username, rest);
+        break;
+
+      case "manage":
+        if (username !== this.admin || !this.state.isGameOver()) {
+          return; // only admins can manage the game and not during an active session
+        }
+
+        if (rest.newGame === true) {
+          this.state.start(this.acceptedUsers);
+          this.broadcastCurrentState();
+        }
+
+        break;
+       
+      default:
+        console.log("Ignored; No handler for ingoing event", event, "with data", rest);
+        break;
+    }
+  }
+
+  private handleActionEvent(username: string, eventData: any): void {
+    const response = this.state.tryMakeMove(username, eventData);
     console.log("->", response);
 
+    const userState = this.state.getState(username) as RoevhulGameState;
+    if (userState.hand.length === 0) {
+      console.log("Player", username, "finished!");
+    }
+
     if (response.ok) {
-      this.broadcast(_ => this.createSocketMessage("player-move", { username, ...rest }));
+      this.broadcast(_ => this.createSocketMessage("player-move", { username, ...eventData }));
       this.broadcastCurrentState();
     } else {
       this.connectedClients.get(username)?.send(this.createSocketMessage("send-response", { message: response.message }));
