@@ -102,6 +102,10 @@ aside div:nth-child(2) ul {
   gap: 5px;
 }
 
+playing-card.selected {
+  border: 3px solid greenyellow;
+}
+
 .player-container .hand {
   bottom: -16px;
   position: absolute;

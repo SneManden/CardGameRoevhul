@@ -38,6 +38,7 @@
         <div class="controls">
           <button id="sort-hand">Sort hand</button>
           <button id="pass">Pass</button>
+          <button id="use">Use</button>
         </div>
       </div>
       
@@ -84,12 +85,14 @@
     const playerHand = document.getElementById("hud").querySelector(".hand");
     const passBtn = document.getElementById("hud").querySelector("#pass");
     const sortHandBtn = document.getElementById("hud").querySelector("#sort-hand");
+    const useBtn = document.getElementById("hud").querySelector("#use");
     const playersList = document.getElementById("players-list");
     const table = document.getElementById("table");
     const seats = table.querySelector("#seats");
     const pile = table.querySelector("#pile");
     
     let isSorted = false;
+    const selectedCards = {};
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -273,13 +276,36 @@
       isSorted = true;
     }
 
-    playerHand.addEventListener("click", e => {
-      const cardClicked = e.target.parentElement;
-      const cardCid = cardClicked.getAttribute("cid");
-      console.log("Clicked", cardClicked);
+    /**
+      @param {HTMLElement} card
+      @return {void}
+    */
+    function onCardClicked(card) {
+      const cid = card.getAttribute("cid");
+      selectedCards[cid] = !Boolean(selectedCards[cid]);
+      card.classList.toggle("selected", selectedCards[cid]);
 
-      if (cardCid !== null && cardCid !== undefined) {
-        socket.send(JSON.stringify({ event: "action", id: 0, move: [cardCid] }));
+      const anySelected = Object.values(selectedCards).filter(Boolean).length > 0;
+      useBtn.toggleAttribute("disabled", !anySelected);
+    }
+
+    playerHand.addEventListener("click", e => {
+      onCardClicked(e.target.parentElement);
+      // const cardClicked = e.target.parentElement;
+      // const cardCid = cardClicked.getAttribute("cid");
+      // console.log("Clicked", cardClicked);
+
+      // if (cardCid !== null && cardCid !== undefined) {
+      //   socket.send(JSON.stringify({ event: "action", id: 0, move: [cardCid] }));
+      // }
+    });
+
+    useBtn.addEventListener("click", e => {
+      const cardCids = Object.entries(selectedCards).filter(([cid, selected]) => selected).map(([cid, _]) => cid);
+      console.log("Playing cards:", cardCids);
+      socket.send(JSON.stringify({ event: "action", id: 0, move: cardCids }));
+      for (const cid of cardCids) {
+        delete selectedCards[cid];
       }
     });
 
