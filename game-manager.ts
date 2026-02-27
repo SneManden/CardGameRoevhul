@@ -9,7 +9,7 @@ export type OutgoingEventType = (typeof OUTGOING_EVENT_TYPES)[number];
 export const isIngoingEvent = (event: any): event is IngoingEventType => INGOING_EVENT_TYPES.includes(event);
 export const isOutgoingEvent = (event: any): event is OutgoingEventType => OUTGOING_EVENT_TYPES.includes(event);
 
-export interface IBar {
+export interface IGameState {
   start(players: string[]): void;
   getCurrentPlayerTurn(): string;
   isGameOver(): boolean;
@@ -18,8 +18,8 @@ export interface IBar {
   getState(username: string): unknown;
 }
 
-export interface IFoo<IBar> {
-  state: IBar;
+export interface IGameManager<IGameState> {
+  state: IGameState;
   started: boolean;
   connectedClients: Map<string, WebSocketWithUsername>;
   acceptedUsers: string[];
@@ -29,12 +29,12 @@ export interface IFoo<IBar> {
   clientDisconnected(username: string): void;
 }
 
-export class Foo implements IFoo<IBar> {
+export class GameManager implements IGameManager<IGameState> {
   connectedClients = new Map<string, WebSocketWithUsername>();
   acceptedUsers: string[] = [];
   started = false;
 
-  constructor(public admin: string, public state: IBar) {
+  constructor(public admin: string, public state: IGameState) {
     console.log("Initialized game (Foo)");
   }
 

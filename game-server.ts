@@ -1,7 +1,7 @@
 import { Context, RouterContext } from "@oak/oak";
 import * as uuid from "@std/uuid";
 import { games, gameTypeToStateMap } from "./db.ts";
-import { Foo, IBar, IFoo } from "./GameState.ts";
+import { GameManager, IGameState, IGameManager } from "./game-manager.ts";
 import { GameType, WebSocketWithUsername, GameConfig } from "./types.ts";
 
 type EventType = "send-message" | "update-users";
@@ -12,13 +12,13 @@ const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 5;
 
 export default class GameServer {
-  private activeGames = new Map<string, IFoo<IBar>>();
+  private activeGames = new Map<string, IGameManager<IGameState>>();
   
   constructor() {
     for (const [id, gameConfig] of games) {
       const initStateFn = gameTypeToStateMap[gameConfig.type];
       const state = initStateFn();
-      this.activeGames.set(id, new Foo(gameConfig.admin, state));
+      this.activeGames.set(id, new GameManager(gameConfig.admin, state));
     }
   }
 
@@ -71,13 +71,13 @@ export default class GameServer {
 
     const initStateFn = gameTypeToStateMap[type];
     const state = initStateFn();
-    this.activeGames.set(gameId, new Foo(gameConfig.admin, state));
+    this.activeGames.set(gameId, new GameManager(gameConfig.admin, state));
 
     ctx.response.body = "Created";
     ctx.response.redirect(`/game/${gameId}`);
   }
 
-  private getGameFromId(gameId: string): { config: GameConfig, game: IFoo<IBar> } | null {
+  private getGameFromId(gameId: string): { config: GameConfig, game: IGameManager<IGameState> } | null {
     if (!gameId) {
       console.log("Invalid gameId", gameId);
       return null;
@@ -157,7 +157,7 @@ export default class GameServer {
     console.log(`[Game "${config.title}"] New client connected: '${username}'`);
   }
 
-  private send(username: string, message: MessageEvent, game: IFoo<IBar>) {
+  private send(username: string, message: MessageEvent, game: IGameManager<IGameState>) {
     console.log("send(username:", username, ", message.data:", message.data, ", game)");
     
     const data = JSON.parse(message.data);
@@ -172,7 +172,7 @@ export default class GameServer {
     }, game);
   }
 
-  private clientDisconnected(username: string, game: IFoo<IBar>) {
+  private clientDisconnected(username: string, game: IGameManager<IGameState>) {
     game.clientDisconnected(username);
     this.broadcastPlayers(game);
 
@@ -181,14 +181,14 @@ export default class GameServer {
     console.log(`Player ${username} disconnected`);
   }
 
-  private broadcastPlayers(game: IFoo<IBar>) {
+  private broadcastPlayers(game: IGameManager<IGameState>) {
     const players = [...game.connectedClients.keys()];
     this.broadcast({ event: "update-users", players }, game);
 
     console.log("Sent list of players:", players);
   }
 
-  private broadcast(message: AppEvent, game: IFoo<IBar>) {
+  private broadcast(message: AppEvent, game: IGameManager<IGameState>) {
     const messageString = JSON.stringify(message);
     for (const client of game.connectedClients.values()) {
       client.send(messageString);

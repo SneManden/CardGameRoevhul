@@ -1,5 +1,5 @@
 import { Application, Router } from "@oak/oak";
-import GameServer from "./GameServer.ts";
+import GameServer from "./game-server.ts";
 import { validate } from "./utilities/jwt.ts";
 import { isLoggedIn, login, logout, mustBeLoggedIn, signup } from "./auth.ts";
 

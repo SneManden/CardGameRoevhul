@@ -2,7 +2,7 @@ import { Card, Deck, isCard, toCid, toShortString } from "../cardGame/Card.ts";
 import { gameConfigDefaults } from "../cardGame/game.ts";
 import { cidStringToMove, Move, moveToString, Rules, isClearMove } from "../cardGame/Rules.ts";
 import { Table } from "../cardGame/Table.ts";
-import { IBar } from "../GameState.ts";
+import { IGameState } from "../game-manager.ts";
 
 // server -> client
 export type RoevhulGameState = {
@@ -27,7 +27,7 @@ export type PlayerMoveEvent = {
 };
 
 
-export class Roevhul implements IBar {
+export class Roevhul implements IGameState {
   private deck: Deck = Deck.create(0);
   private hands = new Map<string, Card[]>();
   private players: string[] = [];
@@ -59,12 +59,12 @@ export class Roevhul implements IBar {
     return this.players[this.turn % this.players.length];
   }
 
-  tryMakeMove(username: string, moveEvent: PlayerMoveEvent): ReturnType<IBar["tryMakeMove"]> {
+  tryMakeMove(username: string, moveEvent: PlayerMoveEvent): ReturnType<IGameState["tryMakeMove"]> {
     const { move: moveValue } = moveEvent; // TODO: parse to real move
 
     console.log("tryMakeMove(username:", username, ", move:", moveValue, ")");
 
-    const err = (message: string, ...logs: any[]): ReturnType<IBar["tryMakeMove"]> => {
+    const err = (message: string, ...logs: any[]): ReturnType<IGameState["tryMakeMove"]> => {
       console.log(message, ...logs);
       return { ok: false, message };
     }

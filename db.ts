@@ -1,11 +1,11 @@
 import * as bcrypt from "bcrypt/mod";
 import * as uuid from "@std/uuid";
 import { salt } from "./auth.ts";
-import { IBar } from "./GameState.ts";
+import { IGameState } from "./game-manager.ts";
 import { GameType, GameConfig, User } from "./types.ts";
 import { Roevhul } from "./games/roevhul.ts";
 
-export const gameTypeToStateMap: { [T in GameType]: () => IBar } = {
+export const gameTypeToStateMap: { [T in GameType]: () => IGameState } = {
   "Roevhul": () => new Roevhul(),
 };
 
