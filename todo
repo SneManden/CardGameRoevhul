@@ -1,0 +1,31 @@
+# Todo
+ - [ ] Show username of logged in user in UI
+ - [ ] Speach bubble for moves (especially "pass")
+ - [ ] Fix dropzone -> pile animation bug
+ - [ ] Make player vs others visual distinction in UI
+ - [ ] Fix UI aside chat textarea not in bottom
+ - [ ] Fix UI HUD not in bottom
+ - [ ] Game over scenario -> new round or exit?
+ - [ ] Game over -> save stats to database
+ - [ ] Real database instead of object in memory store (sqlite?)
+ - [ ] Use env variables for salt + jwt token secret
+ - [ ] Fix played cards too small to read
+ - [ ] Fix card sort to take custom rank into account (2 is best)
+ - [ ] Just sort card by default and remove card-sort button?
+ - [ ] Fix reload also removes top of table
+ - [ ] Game play fix: 4 cards should continue give extra player turn?
+ - [ ] Game play fix: when all other players have passed, table is cleared
+ - [ ] Game play fix: roevhul + president from previous game exchange best/worst cards
+ - [ ] Show crown vs. shit emoji based on result of previous game
+ - [ ] General styling of login page
+ - [ ] General styling of Game lobby page
+ - [ ] General styling of Game page
+ - [ ] Show basic current game statistics (round X, scores?)
+ - [ ] View statistics of played games for user
+ - [ ] Drag/drop instead of select + use btn (or allow both?)
+ - [ ] Make UI responsive
+ - [ ] Play card animation lag: performance issue?
+ - [ ] Spectater mode? (game is public/private/semi(chat-private-but-game-public)) 
+ - [ ] File structure cleanup of frontend
+ - [ ] Use typescript for frontend instead of typeless javascript
+ - [ ] 
