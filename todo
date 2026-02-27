@@ -28,4 +28,6 @@
  - [ ] Spectater mode? (game is public/private/semi(chat-private-but-game-public)) 
  - [ ] File structure cleanup of frontend
  - [ ] Use typescript for frontend instead of typeless javascript
+ - [ ] Create readme
+ - [ ] Set license
  - [ ] 
